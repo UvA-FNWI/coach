@@ -7,5 +7,5 @@ def index(request):
 
 
 def apriori(request, minsup=0):
-    apriori.apriori(minsup)
-    return HttpResponse("apriori, minsup=%s" % minsup)
+    # apriori.apriori(float(minsup))
+    return HttpResponse("apriori, minsup=%s" % float(minsup))

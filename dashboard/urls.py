@@ -5,5 +5,5 @@ from dashboard import views
 urlpatterns = patterns('',
         url(r'^$', views.index, name='index'),
         url(r'^apriori/$', views.apriori, name='apriori'),
-        url(r'^apriori/(?P<minsup>\d+)/$', views.apriori, name='apriori'),
+        url(r'^apriori/(?P<minsup>\d+.?\d*?)/$', views.apriori, name='apriori'),
         )
