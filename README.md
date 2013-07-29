@@ -12,6 +12,12 @@ Installation
     . venv/bin/activate
     pip install -r requirements.txt
 
+Setting up the database
+=======================
+(Make sure you are in the working directory)
+
+`python manage.py syncdb`
+
 Running
 =======
 (Make sure you are in the working directory)
