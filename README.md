@@ -21,5 +21,6 @@ Setting up the database
 Running
 =======
 (Make sure you are in the working directory)
-`. venv/bin/activate`
-`python manage.py runserver` (will by default launch at http://127.0.0.1:8000)
+
+    . venv/bin/activate
+    python manage.py runserver (will by default launch at http://127.0.0.1:8000)
