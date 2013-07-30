@@ -39,7 +39,7 @@ def apriori(D, L, minsup=2, verbose=True):
         k += 1
     return L
 
-def apriori_TID(D, L, verbose=True, minsup=2):
+def apriori_TID(D, L, minsup=2, verbose=True):
     '''
     Version of the apriori algorithm that uses the database directly to
     generate candidates.
@@ -68,13 +68,13 @@ def apriori_TID(D, L, verbose=True, minsup=2):
             if len(C_t):
                 C__[k][TID] = C_t
 
+        L[k] = {c: count for c, count in C_k.iteritems() if count >= minsup}
         if verbose and len(L[k]) > 0:
             print '==== Iteration {} ===='.format(k)
             display_dict('C{}'.format(k), C_k)
             display_dict('C__{}'.format(k), C__[k])
             display_dict('L{}'.format(k), L[k])
 
-        L[k] = {c: count for c, count in C_k.iteritems() if count >= minsup}
         k += 1
     return L
 
@@ -104,15 +104,71 @@ def apriori_gen(L_kmin1, k):
     Returns the candidate set for the current k.
     '''
     C_k = dict()
-
     for p, q in combinations(sorted(L_kmin1), 2):
         if p[:k-1] == q[:k-1]:
             candidate = p[:k-1] + tuple(sorted((p[k-1], q[k-1])))
-            if candidate not in C_k and not \
-                any( (subset_c not in L_kmin1 for subset_c in
+            if not any( (subset_c not in L_kmin1 for subset_c in
                       combinations(candidate, k)) ):
                 C_k[candidate] = 0
     return C_k
+
+def generate_rules(apriori_function, D, L, minsup, minconf, verbose):
+    ''' Using an apriori candidate generation function, find the itemsets
+    for k >= 1. Then, use these candidates to find association rules.
+
+    '''
+    rules = set()
+
+    for k, L_k in sorted(apriori_function(D, L, minsup, verbose).iteritems()):
+        if verbose and len(L_k):
+            print '\n==== L{} ====='.format(k)
+        for l_k, support in L_k.iteritems():
+            # H0 holds consequents of rules with one item in the consequent
+            H_0 = {(element,) : support for element in l_k}
+
+            new_rules = apriori_genrules(L, l_k, support, k, H_0, 0, minconf,
+                    verbose)
+
+            if verbose and len(new_rules):
+                for a, c, conf, supp in new_rules:
+                    print '{} -> {}'.format(a, c).ljust(30) + str(conf)
+
+        rules |= new_rules
+
+    return rules
+
+def apriori_genrules(L, l_k, support_l_k, k, H_m, m, minconf, verbose):
+    '''Based on aprioris itemsets, association rules can be generated given a
+    confidence threshold.
+
+    L_k     : Large itemset
+    k       : Corresponding integer indicating size of items
+    H_m     : Input set of rules
+    m       : Corresponding integer indicating size of consequent
+    minconf : Confidence threshold
+
+    Returns a set of rules in form
+        (antecedent, consequent, confidence, support)
+    '''
+    rules = set()
+
+    if (k > m + 1):
+        H_mplus1 = apriori_gen(H_m, m+1)
+
+        for h_mplus1 in H_mplus1.keys():
+            difference =  tuple(l for l in l_k if not l in h_mplus1)
+            # Conf = support(l_k) / support(l_k - h_m+1)
+            conf = support_l_k / float(L[len(difference)-1][difference])
+            if conf >= minconf:
+                rules.add((difference, h_mplus1, conf, support_l_k))
+            else:
+                del H_mplus1[h_mplus1]
+
+        rules |= apriori_genrules(L, l_k, support_l_k, k, H_mplus1, m+1, minconf, verbose)
+
+    return rules
+
+
 
 def items_to_setofitemsets(d):
     setofitemsets = dict()
@@ -134,7 +190,6 @@ def display_dict(name, d):
             print ''
         except:
             print v
-    print ''
 
 if __name__ == '__main__':
     '''
@@ -146,17 +201,26 @@ if __name__ == '__main__':
                           200: (2,3,5),
                           300: (1,2,3,5),
                           400: (2,5),
+                          #500: (1,2,3,4,5),
+                          #600: (1,2,3,4,5)
                           }
          }
-    L = {0: {(1,): 2,
-             (2,): 3,
-             (3,): 3,
-             (5,): 3}
-         }
+
+    L = {0: defaultdict(int)}
+    for v in D['transactions'].itervalues():
+        for elem in v:
+            L[0][(elem,)] += 1
+
     try:
         minsup=float(sys.argv[1])
+        minconf=float(sys.argv[2])
     except:
-        print 'Usage: python apriori.py <minsup>'
+        print 'Usage: python apriori.py <minsup> <minconf>'
         sys.exit(0)
-    apriori(D, L, minsup=minsup)
-    apriori_TID(D, L, minsup=minsup)
+
+    #apriori(D, L, minsup=minsup)
+    #apriori_TID(D, L, minsup=minsup)
+
+    verbose=True
+    apriori_function = apriori_TID
+    generate_rules(apriori_function, D, L, minsup, minconf, verbose)
