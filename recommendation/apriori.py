@@ -49,7 +49,6 @@ def apriori_TID(D, L, minsup=2, verbose=True):
     '''
     if verbose:
         print '===Apriori TID==='
-    candidate_count = defaultdict(int)
     C__ = {0: items_to_setofitemsets(D['transactions'])}
     if verbose:
         display_dict('C__[0]', C__[0])
@@ -216,7 +215,7 @@ if __name__ == '__main__':
     try:
         minsup=float(sys.argv[1])
         minconf=float(sys.argv[2])
-    except:
+    except:sorted(apriori_function(D, L, minsup, verbose)
         print 'Usage: python apriori.py <minsup> <minconf>'
         sys.exit(0)
 
