@@ -119,7 +119,8 @@ def generate_rules(apriori_function, D, L, minsup, minconf, verbose):
     '''
     rules = set()
 
-    for k, L_k in sorted(apriori_function(D, L, minsup, verbose).iteritems()):
+    candidates = sorted(apriori_function(D, L, minsup, verbose=False)
+    for k, L_k in candidates.iteritems()):
         if verbose and len(L_k):
             print '\n==== L{} ====='.format(k)
         for l_k, support in L_k.iteritems():
@@ -127,7 +128,7 @@ def generate_rules(apriori_function, D, L, minsup, minconf, verbose):
             H_0 = {(element,) : support for element in l_k}
 
             new_rules = apriori_genrules(L, l_k, support, k, H_0, 0, minconf,
-                    verbose)
+                    verbose=False)
 
             if verbose and len(new_rules):
                 for a, c, conf, supp in new_rules:
