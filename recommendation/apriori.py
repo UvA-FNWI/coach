@@ -119,8 +119,9 @@ def generate_rules(apriori_function, D, L, minsup, minconf, verbose):
     '''
     rules = set()
 
-    candidates = sorted(apriori_function(D, L, minsup, verbose=False)
-    for k, L_k in candidates.iteritems()):
+    candidates = sorted(apriori_function(D, L, minsup, verbose=False).
+                        iteritems())
+    for k, L_k in candidates:
         if verbose and len(L_k):
             print '\n==== L{} ====='.format(k)
         for l_k, support in L_k.iteritems():
