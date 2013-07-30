@@ -1,9 +1,10 @@
 from django.http import HttpResponse
-from recommendation import apriori
+from django.shortcuts import render, get_object_or_404
+#from recommendation import apriori
 
 
 def index(request):
-    return HttpResponse()
+    return render(request, 'dashboard/index.html', {})
 
 
 def apriori(request, minsup=0):
