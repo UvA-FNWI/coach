@@ -1,5 +1,6 @@
 venv
 db.sqlite
+coach/settings.py
 
 *.py[cod]
 

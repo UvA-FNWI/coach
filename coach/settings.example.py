@@ -1,3 +1,9 @@
+TINCAN = {
+        'username': '',
+        'password': '',
+        'endpoint': '',
+        }
+
 # Django settings for coach project.
 
 DEBUG = True
