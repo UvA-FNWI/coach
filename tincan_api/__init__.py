@@ -7,6 +7,26 @@ import uuid
 
 VERSIONHEADER="X-Experience-API-Version"
 VERSION="1.0.0"
+VERBS = {'launched': {'id': 'http://adlnet.gov/expapi/verbs/launched',
+                      'display': {'en-US': 'launched'}},
+         'interacted': {'id': 'http://adlnet.gov/expapi/verbs/interacted',
+                        'display': {'en-US': 'interacted'}},
+         'progressed': {'id': 'http://adlnet.gov/expapi/verbs/progressed',
+                        'display': {'en-US': 'progressed'}},
+         'answered': {'id': 'http://adlnet.gov/expapi/verbs/answererd',
+                      'display': {'en-US': 'answered'}},
+         'suspended': {'id':  'http://adlnet.gov/expapi/verbs/suspended',
+                       'display': {'en-US': 'suspended'}},
+         'completed': {'id':  'http://adlnet.gov/expapi/verbs/completed',
+                       'display': {'en-US': 'completed'}}}
+
+ACTIVITY_DEF = {'assessment': {'name': {'en-US': 'assessment'},
+                    'type': 'http://adlnet.gov/expapi/activities/assessment'},
+                'media': {'name': {'en-US': 'media'},
+                    'type': 'http://adlnet.gov/expapi/activities/media'},
+                'question': {'name': {'en-US': 'question'},
+                    'type': 'http://adlnet.gov/expapi/activities/question'}
+                }
 
 class TinCan(object):
   def __init__(self,userName,secret,endpoint,logger=None):

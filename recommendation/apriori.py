@@ -2,7 +2,7 @@
 Implementation of the a priori algorithm, found in 'Fast discovery of association rules' by Agrawal et al.
 
 Auth: Auke Wiggers
-Date: 29-07
+Date: 29-07-2013
 '''
 import sys
 from itertools import izip, combinations
@@ -24,7 +24,7 @@ def apriori(D, L, minsup=2, verbose=True):
 
     while len(L[k-1]) > 0:
         C_k = apriori_gen(L[k-1], k)            # create new candidate
-        for transaction in D['transactions'].itervalues():
+        for transaction in D.itervalues():
             C_t = subset(C_k, transaction)   # candidates contained in t
             for candidate in C_t:
                 C_k[candidate] += 1
@@ -49,7 +49,7 @@ def apriori_TID(D, L, minsup=2, verbose=True):
     '''
     if verbose:
         print '===Apriori TID==='
-    C__ = {0: items_to_setofitemsets(D['transactions'])}
+    C__ = {0: items_to_setofitemsets(D)}
     if verbose:
         display_dict('C__[0]', C__[0])
     k = 1
@@ -198,17 +198,15 @@ if __name__ == '__main__':
     http://www.cs.helsinki.fi/u/htoivone/pubs/advances.pdf
 
     '''
-    D = {'transactions': {100: (1,3,4),
-                          200: (2,3,5),
-                          300: (1,2,3,5),
-                          400: (2,5),
-                          #500: (1,2,3,4,5),
-                          #600: (1,2,3,4,5)
-                          }
-         }
+    D = {100: (1,3,4),
+         200: (2,3,5),
+         300: (1,2,3,5),
+         400: (2,5),
+         #500: (1,2,3,4,5),
+         #600: (1,2,3,4,5) }
 
     L = {0: defaultdict(int)}
-    for v in D['transactions'].itervalues():
+    for v in D.itervalues():
         for elem in v:
             L[0][(elem,)] += 1
 

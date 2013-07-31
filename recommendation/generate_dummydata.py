@@ -1,33 +1,11 @@
 import sys
 import os
-import os,sys
 parentdir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0,parentdir)
 from coach import settings
 from tincan_api import TinCan
 import random
 import time
-
-VERBS = {'launched': {'id': 'http://adlnet.gov/expapi/verbs/launched',
-                      'display': {'en-US': 'launched'}},
-         'interacted': {'id': 'http://adlnet.gov/expapi/verbs/interacted',
-                        'display': {'en-US': 'interacted'}},
-         'progressed': {'id': 'http://adlnet.gov/expapi/verbs/progressed',
-                        'display': {'en-US': 'progressed'}},
-         'answered': {'id': 'http://adlnet.gov/expapi/verbs/answererd',
-                      'display': {'en-US': 'answered'}},
-         'suspended': {'id':  'http://adlnet.gov/expapi/verbs/suspended',
-                       'display': {'en-US': 'suspended'}},
-         'completed': {'id':  'http://adlnet.gov/expapi/verbs/completed',
-                       'display': {'en-US': 'completed'}}}
-
-ACTIVITY_DEF = {'assessment': {'name': {'en-US': 'assessment'},
-                    'type': 'http://adlnet.gov/expapi/activities/assessment'},
-                'media': {'name': {'en-US': 'media'},
-                    'type': 'http://adlnet.gov/expapi/activities/media'},
-                'question': {'name': {'en-US': 'question'},
-                    'type': 'http://adlnet.gov/expapi/activities/question'}
-                }
 
 ASSIGNMENTS = [('http://www.uva.nl/question1', 'question'),
                ('http://www.uva.nl/question2', 'question'),
@@ -46,7 +24,7 @@ def simulate(_actor):
 
 def activity_object(_id, _activity):
     '''Create an object of type activity'''
-    return {'id': _id, 'definition': ACTIVITY_DEF[_activity]}
+    return {'id': _id, 'definition': tc.ACTIVITY_DEF[_activity]}
 
 def complete(_actor, _object, steps=10, p_success=1.0):
     '''Finish an object in steps by progressing through it'''
@@ -61,7 +39,7 @@ def complete(_actor, _object, steps=10, p_success=1.0):
 
 def progressed(_actor, _object, progress):
     jsonobject = { 'actor': _actor,
-                   'verb': VERBS['progressed'],
+                   'verb': tc.VERBS['progressed'],
                    'object': _object,
                    #'extensions': {'progress': str(progress)}
                    }
@@ -71,7 +49,7 @@ def progressed(_actor, _object, progress):
 
 def suspended(_actor, _object):
     jsonobject = { 'actor': _actor,
-                   'verb': VERBS['suspended'],
+                   'verb': tc.VERBS['suspended'],
                    'object': _object,}
     for x in jsonobject:
         print x, jsonobject[x]
@@ -79,7 +57,7 @@ def suspended(_actor, _object):
 
 def completed(_actor, _object):
     jsonobject = { 'actor': _actor,
-                   'verb': VERBS['completed'],
+                   'verb': tc.VERBS['completed'],
                    'object': _object,}
     for x in jsonobject:
         print x, jsonobject[x]
