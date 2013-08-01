@@ -14,10 +14,14 @@
 				var items = [];
 
 				$.each(data, function(key, val) {
+					name = val.object.id.split('/').pop();
 					items.push('<tr><td>'+
-						val.timestamp
+						val.verb.display['en-US']
 						+'</td><td>' +
-						val.object.id + '</td></tr>');
+						'<a href="' + val.object.id + '">' +
+						name + '</a>'
+						+'</td><td>' +
+						val.timestamp.split("\.")[0] + '</td></tr>');
 					});
 
 				$('<table/>', {
