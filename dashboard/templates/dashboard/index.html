@@ -15,7 +15,12 @@
 
 				$.each(data, function(key, val) {
 					name = val.object.id.split('/').pop();
-					items.push('<tr><td>'+
+					if (val.verb.id == "http://adlnet.gov/expapi/verbs/completed") {
+						tr = '<tr class="success">'
+					} else {
+						tr = '<tr>'
+					}
+					items.push(tr + '<td>'+
 						val.verb.display['en-US']
 						+'</td><td>' +
 						'<a href="' + val.object.id + '">' +
