@@ -13,5 +13,5 @@ class Recommendation(models.Model):
         return self.recommendation_name
 
     def __html__(self):
-        return '<a href="' + str(recommendation_url) + '" >' +\
+        return '<a href="' + str(recommendation_url) + '" >' + \
                str(recommendation_name) + '</a>'
