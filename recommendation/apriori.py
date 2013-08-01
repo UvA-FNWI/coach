@@ -25,6 +25,8 @@ def apriori(D, L, minsup=2, verbose=True):
     while len(L[k-1]) > 0:
         C_k = apriori_gen(L[k-1], k)            # create new candidate
         for transaction in D.itervalues():
+            display_item(transaction)
+            print ''
             C_t = subset(C_k, transaction)   # candidates contained in t
             for candidate in C_t:
                 C_k[candidate] += 1
@@ -85,8 +87,7 @@ def subset(candidate_set, transaction):
 
     Returns the remainder of the candidate set after item selection.
     '''
-    return (c for c in candidate_set if c in
-            (x for x in combinations(transaction, len(c))))
+    return (c for c in candidate_set if all(item for item in c in transaction))
 
 def apriori_gen(L_kmin1, k):
     ''' Candidate generation for the apriori algorithm. First, L[k-1] is
@@ -103,9 +104,19 @@ def apriori_gen(L_kmin1, k):
     Returns the candidate set for the current k.
     '''
     C_k = dict()
+
     for p, q in combinations(sorted(L_kmin1), 2):
         if p[:k-1] == q[:k-1]:
             candidate = p[:k-1] + tuple(sorted((p[k-1], q[k-1])))
+            if k == 3:
+                for subset_c in combinations(candidate, k):
+                    for item in subset_c:
+                        for s_item in item:
+                            print s_item.split('/')[-1], ' ',
+                        print '   ',
+                    print ''
+                print '--'
+
             if not any( (subset_c not in L_kmin1 for subset_c in
                       combinations(candidate, k)) ):
                 C_k[candidate] = 0
@@ -133,7 +144,11 @@ def generate_rules(apriori_function, D, L, minsup, minconf, verbose,
 
             if verbose and len(new_rules):
                 for a, c, conf, supp in new_rules:
-                    print '{} -> {}'.format(a, c).ljust(30) + str(conf)
+                    for antecedent in a:
+                        print '\n{}'.format(antecedent),
+                    print ' -->      {}'.format(conf)
+                    for consequent in c:
+                        print '    {}'.format(consequent)
 
             rules |= new_rules
 
@@ -162,11 +177,12 @@ def apriori_genrules(L, l_k, support_l_k, k, H_m, m, minconf, verbose):
             # Conf = support(l_k) / support(l_k - h_m+1)
             conf = support_l_k / float(L[len(difference)-1][difference])
             if conf >= minconf:
-                rules.add((difference, h_mplus1, conf, support_l_k))
+                rules.add((h_mplus1, difference, conf, support_l_k))
             else:
                 del H_mplus1[h_mplus1]
 
-        rules |= apriori_genrules(L, l_k, support_l_k, k, H_mplus1, m+1, minconf, verbose)
+        rules |= apriori_genrules(L, l_k, support_l_k, k, H_mplus1, m+1,
+                                  minconf, verbose)
 
     return rules
 
@@ -185,13 +201,19 @@ def items_to_setofitemsets(d):
 def display_dict(name, d):
     print '\n{}'.format(name)
     for k,v in d.iteritems():
-        print str(k).ljust(8),
-        try:
-            for v_ in v:
-                print str(v_).ljust(10),
-            print ''
-        except:
-            print v
+        display_item(k)
+        print ' : ',
+        display_item(v)
+        print ''
+def display_item(item):
+    if isinstance(item, str) or isinstance(item, unicode):
+        print item.split('/')[-1],
+    elif isinstance(item, list) or isinstance(item, tuple) or isinstance(item, set):
+        for sub_item in item:
+            display_item(sub_item)
+        print ' ',
+    else:
+        print item,
 
 if __name__ == '__main__':
     '''
@@ -223,4 +245,4 @@ if __name__ == '__main__':
 
     verbose=True
     apriori_function = apriori_TID
-    generate_rules(apriori_function, D, L, minsup, minconf, verbose)
+    generate_rules(apriori_function, D, dict(L), minsup, minconf, verbose, veryverbose=True)
