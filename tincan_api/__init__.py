@@ -22,13 +22,17 @@ class TinCan(object):
            'completed': {'id':  'http://adlnet.gov/expapi/verbs/completed',
                          'display': {'en-US': 'completed'}}}
 
-  ACTIVITY_DEF = {'assessment': {'name': {'en-US': 'assessment'},
-                     'type': 'http://adlnet.gov/expapi/activities/assessment'},
-                  'media': {'name': {'en-US': 'media'},
-                      'type': 'http://adlnet.gov/expapi/activities/media'},
-                  'question': {'name': {'en-US': 'question'},
-                      'type': 'http://adlnet.gov/expapi/activities/question'}
-                 }
+  ACTIVITY_DEF = {
+      'assessment': {'name': {'en-US': 'assessment'},
+                     'type': 'http://adlnet.gov/expapi/activities/assessment',
+                     'description': {'en-US': 'assessment'}},
+      'media': {'name': {'en-US': 'media'},
+                'type': 'http://adlnet.gov/expapi/activities/media',
+                'description': {'en-US': 'media'}},
+      'question': {'name': {'en-US': 'question'},
+                   'type': 'http://adlnet.gov/expapi/activities/question',
+                   'description': {'en-US': 'question'}},
+                }
 
   def __init__(self,userName,secret,endpoint,logger=None):
     self._userName = userName

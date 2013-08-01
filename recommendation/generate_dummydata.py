@@ -19,23 +19,25 @@ def simulate(_actor):
     '''
     for _id, _def in ASSIGNMENTS:
         _object = activity_object(_id, _def)
-        complete(_actor, _object, steps=10,
+        complete(_actor, _object, steps=3,
                 p_success=random.uniform(0.8, 1.0))
 
 def activity_object(_id, _activity):
     '''Create an object of type activity'''
     return {'id': _id, 'definition': tc.ACTIVITY_DEF[_activity]}
 
-def complete(_actor, _object, steps=10, p_success=1.0):
+def complete(_actor, _object, steps=2, p_success=1.0):
     '''Finish an object in steps by progressing through it'''
     for s in xrange(steps):
         progressed(_actor, _object, 1.0 / steps)
         time.sleep(1)
         if random.random() > p_success:
             suspended(_actor, _object)
+            print _actor['name'], 'suspended assignment ', _object['id']
             break
     else:
         completed(_actor, _object)
+        print _actor['name'], 'completed assignment ', _object['id']
 
 def progressed(_actor, _object, progress):
     jsonobject = { 'actor': _actor,
@@ -43,24 +45,18 @@ def progressed(_actor, _object, progress):
                    'object': _object,
                    #'extensions': {'progress': str(progress)}
                    }
-    print '\n', jsonobject, '\n'
-
     tc.submitStatement(jsonobject)
 
 def suspended(_actor, _object):
     jsonobject = { 'actor': _actor,
                    'verb': tc.VERBS['suspended'],
                    'object': _object,}
-    for x in jsonobject:
-        print x, jsonobject[x]
     tc.submitStatement(jsonobject)
 
 def completed(_actor, _object):
     jsonobject = { 'actor': _actor,
                    'verb': tc.VERBS['completed'],
                    'object': _object,}
-    for x in jsonobject:
-        print x, jsonobject[x]
     tc.submitStatement(jsonobject)
 
 if __name__=="__main__":
@@ -74,13 +70,4 @@ if __name__=="__main__":
     tc = TinCan(settings.TINCAN['username'],
                 settings.TINCAN['password'],
                 settings.TINCAN['endpoint'])
-    tc.submitStatement({
-        'verb': {'id': 'http://adlnet.gov/expapi/verbs/progressed',
-                 'display': {'en-US': 'progressed'}},
-        'actor': {'mbox': 'mailto:auke', 'name': 'auke'},
-        'object': {'definition':
-                     {'type': 'http://adlnet.gov/expapi/activities/question',
-                      'name': {'en-US': 'question'}},
-                   'id': 'http://www.uva.nl/question1'}})
-    #simulate(_actor)
-
+    simulate(_actor)
