@@ -21,13 +21,17 @@ def recommend(recommendationfunction, **kwargs):
     '''Generate new recommendation rules for every assignment that is of some
     importance, based on completed and launched media, questions, assessments.
 
+    Note that only questions and media may be recommended, as the filter should
+    already make sure that the found questions/media are only relevant for the
+    current assessment.
+
     TODO:
-    Check if milestone passed
-    Decay for past milestones + assigments
+      - Check if milestone passed
+      - Decay for past milestones + assigments
+      - Alter filter for smaller query, perhaps multiple queries?
 
     Don't try to run if
       1. Top X will not be altered, based on people submitted/threshold conf/sup
-      2.
 
     '''
     tc = TinCan(settings.TINCAN['username'],
@@ -40,17 +44,17 @@ def recommend(recommendationfunction, **kwargs):
 
     # Group data by actor, as each actor corresponds to one 'basket'
     transactions = defaultdict(list)
-    for statement in statements['statements']:
-        # TODO not every actor has mbox
-        transactions[statement['actor']['mbox']].append(
-                                                   (statement['verb']['id'],
-                                                    statement['object']['id']))
-
-    # Count occurrence of verbs and objects
     L = {0: defaultdict(int)}
-    for statementlist in transactions.itervalues(): # for each transaction
-        for statement in statementlist:             # for every statement
-            L[0][(statement,)] += 1
+    for statement in statements['statements']:
+        # TODO somehow remove these in filter already.
+        if statement['object']['definition']['type'] == tc.ACTIVITY_DEF['assessment']['type']:
+            continue
+
+        statement_tup = (statement['verb']['id'],
+                         statement['object']['id'])
+        # FIXME not every actor has mbox
+        transactions[statement['actor']['mbox']].append(statement_tup)
+        L[0][(statement_tup,)] += 1
 
     # Use baskets as transactions and recommend stuff itself instead of actions
     if recommendationfunction == 'apriori':
@@ -59,8 +63,6 @@ def recommend(recommendationfunction, **kwargs):
         minconf = kwargs['minconf']
         rules = apriori.generate_rules(apriori.apriori, transactions, L, minsup,
                                minconf, verbose=False, veryverbose=False)
-
-    # TODO but only recommend media and questions
 
     '''
     Save found rules based on the relevant assessment.
@@ -73,7 +75,7 @@ def recommend(recommendationfunction, **kwargs):
     '''
 
     rulebase = []
-    milestone=''
+    milestone = ''
     for ante, conse, confidence, support in rules:
         rule = {'milestone': milestone, 'antecedent': ante, 'consequent': conse,
                 'confidence': confidence, 'support': support}
