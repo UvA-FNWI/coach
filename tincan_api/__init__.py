@@ -5,30 +5,31 @@ import urllib
 import uuid
 #import dataValidation
 
-VERSIONHEADER="X-Experience-API-Version"
-VERSION="1.0.0"
-VERBS = {'launched': {'id': 'http://adlnet.gov/expapi/verbs/launched',
-                      'display': {'en-US': 'launched'}},
-         'interacted': {'id': 'http://adlnet.gov/expapi/verbs/interacted',
-                        'display': {'en-US': 'interacted'}},
-         'progressed': {'id': 'http://adlnet.gov/expapi/verbs/progressed',
-                        'display': {'en-US': 'progressed'}},
-         'answered': {'id': 'http://adlnet.gov/expapi/verbs/answererd',
-                      'display': {'en-US': 'answered'}},
-         'suspended': {'id':  'http://adlnet.gov/expapi/verbs/suspended',
-                       'display': {'en-US': 'suspended'}},
-         'completed': {'id':  'http://adlnet.gov/expapi/verbs/completed',
-                       'display': {'en-US': 'completed'}}}
-
-ACTIVITY_DEF = {'assessment': {'name': {'en-US': 'assessment'},
-                    'type': 'http://adlnet.gov/expapi/activities/assessment'},
-                'media': {'name': {'en-US': 'media'},
-                    'type': 'http://adlnet.gov/expapi/activities/media'},
-                'question': {'name': {'en-US': 'question'},
-                    'type': 'http://adlnet.gov/expapi/activities/question'}
-                }
 
 class TinCan(object):
+  VERSIONHEADER="X-Experience-API-Version"
+  VERSION="1.0.0"
+  VERBS = {'launched': {'id': 'http://adlnet.gov/expapi/verbs/launched',
+                        'display': {'en-US': 'launched'}},
+           'interacted': {'id': 'http://adlnet.gov/expapi/verbs/interacted',
+                          'display': {'en-US': 'interacted'}},
+           'progressed': {'id': 'http://adlnet.gov/expapi/verbs/progressed',
+                          'display': {'en-US': 'progressed'}},
+           'answered': {'id': 'http://adlnet.gov/expapi/verbs/answererd',
+                        'display': {'en-US': 'answered'}},
+           'suspended': {'id':  'http://adlnet.gov/expapi/verbs/suspended',
+                         'display': {'en-US': 'suspended'}},
+           'completed': {'id':  'http://adlnet.gov/expapi/verbs/completed',
+                         'display': {'en-US': 'completed'}}}
+
+  ACTIVITY_DEF = {'assessment': {'name': {'en-US': 'assessment'},
+                     'type': 'http://adlnet.gov/expapi/activities/assessment'},
+                  'media': {'name': {'en-US': 'media'},
+                      'type': 'http://adlnet.gov/expapi/activities/media'},
+                  'question': {'name': {'en-US': 'question'},
+                      'type': 'http://adlnet.gov/expapi/activities/question'}
+                 }
+
   def __init__(self,userName,secret,endpoint,logger=None):
     self._userName = userName
     self._secret = secret
@@ -46,8 +47,8 @@ class TinCan(object):
                     data=json.dumps(jsonObject),
                     auth=HTTPBasicAuth(self._userName,self._secret),
                     headers={"Content-Type":"application/json",
-                             VERSIONHEADER:VERSION})
-      return eval(resp.text)[0]
+                             self.VERSIONHEADER:self.VERSION})
+      #return eval(resp.text)[0]
 
     except IOError as e:
       if self.logger is not None:
@@ -66,7 +67,7 @@ class TinCan(object):
                     data=json.dumps(statement),
                     auth=HTTPBasicAuth(self._userName,self._secret),
                     headers={"Content-Type":"application/json",
-                             VERSIONHEADER:VERSION})
+                             self.VERSIONHEADER:self.VERSION})
       except IOError as e:
         if self.logger is not None:
           self.logger.error(e)
@@ -82,7 +83,7 @@ class TinCan(object):
       resp = requests.get(url,
                 auth=HTTPBasicAuth(self._userName,self._secret),
                 headers={"Content-Type":"application/json",
-                         VERSIONHEADER:VERSION})
+                         self.VERSIONHEADER:self.VERSION})
       return resp.json()
     except IOError as e:
       if self.logger is not None:
@@ -94,7 +95,7 @@ class TinCan(object):
       resp = requests.get(self._endpoint,
               auth=HTTPBasicAuth(self._userName,self._secret),
               headers={"Content-Type":"application/json",
-                       VERSIONHEADER:VERSION})
+                       self.VERSIONHEADER:self.VERSION})
       return resp.json()
     except IOError as e:
       if self.logger is not None:
@@ -116,12 +117,12 @@ class TinCan(object):
                            data=queryObject,
                            auth=HTTPBasicAuth(self._userName,self._secret),
                            headers={"Content-Type":"application/json",
-                                     VERSIONHEADER:VERSION})
+                                     self.VERSIONHEADER:self.VERSION})
       return resp.json()
     else:
       resp = requests.get(url,
                 auth=HTTPBasicAuth(self._userName,self._secret),
                 headers={"Content-Type":"application/json",
-                         VERSIONHEADER:VERSION})
+                         self.VERSIONHEADER:self.VERSION})
       return resp.json()
 

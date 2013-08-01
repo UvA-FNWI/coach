@@ -111,14 +111,15 @@ def apriori_gen(L_kmin1, k):
                 C_k[candidate] = 0
     return C_k
 
-def generate_rules(apriori_function, D, L, minsup, minconf, verbose):
+def generate_rules(apriori_function, D, L, minsup, minconf, verbose,
+        veryverbose=False):
     ''' Using an apriori candidate generation function, find the itemsets
     for k >= 1. Then, use these candidates to find association rules.
 
     '''
     rules = set()
 
-    candidates = sorted(apriori_function(D, L, minsup, verbose=False).
+    candidates = sorted(apriori_function(D, L, minsup, verbose=veryverbose).
                         iteritems())
     for k, L_k in candidates:
         if verbose and len(L_k):
@@ -128,13 +129,13 @@ def generate_rules(apriori_function, D, L, minsup, minconf, verbose):
             H_0 = {(element,) : support for element in l_k}
 
             new_rules = apriori_genrules(L, l_k, support, k, H_0, 0, minconf,
-                    verbose=False)
+                    verbose=veryverbose)
 
             if verbose and len(new_rules):
                 for a, c, conf, supp in new_rules:
                     print '{} -> {}'.format(a, c).ljust(30) + str(conf)
 
-        rules |= new_rules
+            rules |= new_rules
 
     return rules
 
@@ -201,7 +202,7 @@ if __name__ == '__main__':
     D = {100: (1,3,4),
          200: (2,3,5),
          300: (1,2,3,5),
-         400: (2,5),
+         400: (2,5),}
          #500: (1,2,3,4,5),
          #600: (1,2,3,4,5) }
 
@@ -213,7 +214,7 @@ if __name__ == '__main__':
     try:
         minsup=float(sys.argv[1])
         minconf=float(sys.argv[2])
-    except:sorted(apriori_function(D, L, minsup, verbose)
+    except:
         print 'Usage: python apriori.py <minsup> <minconf>'
         sys.exit(0)
 
