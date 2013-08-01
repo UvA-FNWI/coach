@@ -25,8 +25,6 @@ def apriori(D, L, minsup=2, verbose=True):
     while len(L[k-1]) > 0:
         C_k = apriori_gen(L[k-1], k)            # create new candidate
         for transaction in D.itervalues():
-            display_item(transaction)
-            print ''
             C_t = subset(C_k, transaction)   # candidates contained in t
             for candidate in C_t:
                 C_k[candidate] += 1
@@ -87,7 +85,7 @@ def subset(candidate_set, transaction):
 
     Returns the remainder of the candidate set after item selection.
     '''
-    return (c for c in candidate_set if all(item for item in c in transaction))
+    return (c for c in candidate_set if all(item in transaction for item in c))
 
 def apriori_gen(L_kmin1, k):
     ''' Candidate generation for the apriori algorithm. First, L[k-1] is
@@ -108,15 +106,6 @@ def apriori_gen(L_kmin1, k):
     for p, q in combinations(sorted(L_kmin1), 2):
         if p[:k-1] == q[:k-1]:
             candidate = p[:k-1] + tuple(sorted((p[k-1], q[k-1])))
-            if k == 3:
-                for subset_c in combinations(candidate, k):
-                    for item in subset_c:
-                        for s_item in item:
-                            print s_item.split('/')[-1], ' ',
-                        print '   ',
-                    print ''
-                print '--'
-
             if not any( (subset_c not in L_kmin1 for subset_c in
                       combinations(candidate, k)) ):
                 C_k[candidate] = 0

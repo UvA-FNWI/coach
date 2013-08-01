@@ -20,6 +20,15 @@ import apriori
 def recommend(recommendationfunction, **kwargs):
     '''Generate new recommendation rules for every assignment that is of some
     importance, based on completed and launched media, questions, assessments.
+
+    TODO:
+    Check if milestone passed
+    Decay for past milestones + assigments
+
+    Don't try to run if
+      1. Top X will not be altered, based on people submitted/threshold conf/sup
+      2.
+
     '''
     tc = TinCan(settings.TINCAN['username'],
                 settings.TINCAN['password'],
@@ -32,13 +41,16 @@ def recommend(recommendationfunction, **kwargs):
     # Group data by actor, as each actor corresponds to one 'basket'
     transactions = defaultdict(list)
     for statement in statements['statements']:
-        transactions[tuple(statement['actor'])].append(statement)
+        # TODO not every actor has mbox
+        transactions[statement['actor']['mbox']].append(
+                                                   (statement['verb']['id'],
+                                                    statement['object']['id']))
 
     # Count occurrence of verbs and objects
     L = {0: defaultdict(int)}
     for statementlist in transactions.itervalues(): # for each transaction
         for statement in statementlist:             # for every statement
-            L[(statement['verb'], statement['object']['id'])] += 1
+            L[0][(statement,)] += 1
 
     # Use baskets as transactions and recommend stuff itself instead of actions
     if recommendationfunction == 'apriori':
@@ -46,9 +58,28 @@ def recommend(recommendationfunction, **kwargs):
         minsup = kwargs['minsup']
         minconf = kwargs['minconf']
         rules = apriori.generate_rules(apriori.apriori, transactions, L, minsup,
-                               minconf, verbose=True)
+                               minconf, verbose=False, veryverbose=False)
 
-    # but only recommend media and questions
+    # TODO but only recommend media and questions
+
+    '''
+    Save found rules based on the relevant assessment.
+
+    milestone     An id indicating for which timeslice these rules are relevant
+    antecedent    LHS
+    consequent    RHS
+    confidence    Confidence for the rule LHS -> RHS
+    support       Support for this rule
+    '''
+
+    rulebase = []
+    milestone=''
+    for ante, conse, confidence, support in rules:
+        rule = {'milestone': milestone, 'antecedent': ante, 'consequent': conse,
+                'confidence': confidence, 'support': support}
+        rulebase.append(rule)
+
+    return rulebase
 
 if __name__=="__main__":
-    recommend('apriori', minsup=2, minconf=0.3)
+    recommend('apriori', minsup=float(sys.argv[1]), minconf=float(sys.argv[2]))
