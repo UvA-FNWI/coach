@@ -6,5 +6,5 @@ urlpatterns = patterns('',
         url(r'^$', views.index, name='index'),
         url(r'^apriori/$', views.apriori, name='apriori'),
         url(r'^apriori/(?P<minsup>\d+(.\d+)?)/$', views.apriori, name='apriori'),
-        url(r'^api/statements$', views.tincan, name='tincan'),
+        url(r'^api/statements$', views.tincan_get, name='tincan_get'),
         )

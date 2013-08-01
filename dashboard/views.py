@@ -27,7 +27,7 @@ def apriori(request):
 
 
 # TinCan
-def tincan(request):
+def tincan_get(request):
     obj = {'actor': {'name': request.user, 'objectType': 'Agent'}}
     tc_resp = tincan.getFilteredStatements(obj)
     return HttpResponse(json.dumps(tc_resp['statements']))
