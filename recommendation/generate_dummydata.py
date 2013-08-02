@@ -10,12 +10,14 @@ import string
 
 ASSIGNMENTS = [('http://www.uva.nl/question1', 'question'),
                ('http://www.uva.nl/question2', 'question'),
+               ('http://www.uva.nl/media1', 'media'),
+               ('http://www.uva.nl/media2', 'media'),
+               ('http://www.uva.nl/assessment1', 'assessment'),
                ('http://www.uva.nl/question3', 'question'),
                ('http://www.uva.nl/question4', 'question'),
                ('http://www.uva.nl/question5', 'question'),
-               ('http://www.uva.nl/media1', 'media'),
-               ('http://www.uva.nl/media2', 'media'),
-               ('http://www.uva.nl/assessment', 'assessment')]
+               ('http://www.uva.nl/assessment2', 'assessment')]
+
 
 def simulate(_actor):
     '''Pick an assignment at random and complete it with some prob of

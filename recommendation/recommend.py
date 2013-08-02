@@ -42,44 +42,62 @@ def recommend(recommendationfunction, **kwargs):
     statement_filter = {'verb': tc.VERBS['completed']['id']}
     statements = tc.getFilteredStatements(statement_filter)
 
-    # Group data by actor, as each actor corresponds to one 'basket'
-    transactions = defaultdict(list)
-    L = {0: defaultdict(int)}
+    # Loop over reverse chronological data
+    milestones = defaultdict(lambda : 'NO_ASSESSMENT')       # progress per actor
+    assessment_ids = []
+    transactions = dict()
+    freq = dict()
+
     for statement in statements['statements']:
-        # TODO somehow remove these in filter already.
+        actor = statement['actor']['mbox']     # TODO replace mbox by ID
+        assessment_id = statement['object']['id']
+
+        # Use assessments to separate timeslices per actor
         if statement['object']['definition']['type'] == tc.ACTIVITY_DEF['assessment']['type']:
-            continue
+            assessment_id = statement['object']['id']
+            milestones[actor] = assessment_id                # For every milestone:
 
-        statement_tup = (statement['verb']['id'],
-                         statement['object']['id'])
-        # FIXME not every actor has mbox
-        transactions[statement['actor']['mbox']].append(statement_tup)
-        L[0][(statement_tup,)] += 1
+            # Keep track of all assessments in reverse chronological order as well
+            if not assessment_id in assessment_ids:
+                transactions[assessment_id] = defaultdict(list)  # verbs+objects per actor
+                freq[assessment_id] = {0: defaultdict(int)}     # frequency of 1-pairs
+                assessment_ids.append(assessment_id)
+        else:
+            assessment_id = milestones[actor]
+            if assessment_id == 'NO_ASSESSMENT':
+                continue
 
-    # Use baskets as transactions and recommend stuff itself instead of actions
-    if recommendationfunction == 'apriori':
-        # TODO choose between apriori / TID / hybrid
-        minsup = kwargs['minsup']
-        minconf = kwargs['minconf']
-        rules = apriori.generate_rules(apriori.apriori, transactions, L, minsup,
-                               minconf, verbose=False, veryverbose=False)
+            statement_tup = (statement['verb']['id'],
+                             statement['object']['id'])
+            transactions[assessment_id][actor].append(statement_tup)
+            freq[assessment_id][0][(statement_tup,)] += 1
 
-    '''
-    Save found rules based on the relevant assessment.
 
-    milestone     An id indicating for which timeslice these rules are relevant
-    antecedent    LHS
-    consequent    RHS
-    confidence    Confidence for the rule LHS -> RHS
-    support       Support for this rule
-    '''
-
+    # Use baskets as transactions and recommend
     rulebase = []
-    milestone = ''
-    for ante, conse, confidence, support in rules:
-        rule = {'milestone': milestone, 'antecedent': ante, 'consequent': conse,
-                'confidence': confidence, 'support': support}
-        rulebase.append(rule)
+    for assessment_id in assessment_ids:
+        D = transactions[assessment_id]
+        L = freq[assessment_id]
+
+        rules = []
+        if recommendationfunction == 'apriori':
+            # TODO choose between apriori / TID / hybrid
+            minsup = kwargs['minsup']
+            minconf = kwargs['minconf']
+
+            print 'Generating rules for assessment ', assessment_id
+            rules = apriori.generate_rules(apriori.apriori, D, L, minsup,
+                                   minconf, verbose=False, veryverbose=False)
+
+        # Save found rules based on the relevant assessment.
+        for ante, conse, confidence, support in rules:
+            rule = {'milestone': assessment_id,  # id indicating relevant assessment
+                    'antecedent': ante,          # LHS
+                    'consequent': conse,         # RHS
+                    'confidence': confidence,    # Confidence for LHS->RHS
+                    'support': support}          # Support for the rule
+
+            rulebase.append(rule)
 
     return rulebase
 
