@@ -17,7 +17,7 @@ from operator import itemgetter
 from collections import defaultdict
 import apriori
 
-def recommend(recommendationfunction, **kwargs):
+def recommend(recommendationfunction='apriori', **kwargs):
     '''Generate new recommendation rules for every assignment that is of some
     importance, based on completed and launched media, questions, assessments.
 
