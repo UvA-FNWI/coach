@@ -54,7 +54,7 @@ def recommend(recommendationfunction='apriori', inputverbs=None, **kwargs):
     freq = dict()
     name_description = dict()
 
-    for statement in statements['statements']:
+    for statement in statements:
         if statement['verb']['id'] not in verbs:
             continue
 
