@@ -44,27 +44,16 @@ def generate_recommendations(request):
             url = consequent[1]
             name = r_dict[url][0]
             description = r_dict[url][1]
-            # This should be update_or_create in Django 1.6
             i += 1
-            print i
-            try:
-                rec = Recommendation.objects.get(item_hash=item_hash,
-                                                 url=url)
-                rec.confidence = confidence
-                rec.support = support
-                rec.milestone = milestone
-                rec.name = name
-                rec.description = description
-                rec.save()
-            except Recommendation.DoesNotExist:
-                rec = Recommendation(item_hash=item_hash,
-                                     confidence=confidence,
-                                     support=support,
-                                     milestone=milestone,
-                                     name=name,
-                                     url=url,
-                                     description=description)
-                rec.save()
+            print 'adding rule:', i
+            rec = Recommendation(item_hash=item_hash,
+                                 confidence=confidence,
+                                 support=support,
+                                 milestone=milestone,
+                                 name=name,
+                                 url=url,
+                                 description=description)
+            rec.save()
 
     transaction.commit()
     return HttpResponse(pformat(r_list))
