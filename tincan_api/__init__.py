@@ -106,14 +106,10 @@ class TinCan(object):
                 except ConnectionError as e:
                     if self.logger is not None:
                         self.logger.error(e)
-                    print "Connection failed to",endpoint
                     return statements
                 result = resp.json()
                 statements = statements + result["statements"]
-                print "So far %d statements have been retrieved" % (len(statements),)
-                print "Last statement retrieved: %s" % (statements[-1],)
                 if "more" in result and result["more"]:
-                    print "Pickup more", result["more"]
                     endpoint = urljoin(endpoint, result["more"])
                 else:
                     endpoint = None
