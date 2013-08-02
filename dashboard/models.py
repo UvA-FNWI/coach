@@ -2,7 +2,7 @@ from django.db import models
 
 
 class Recommendation(models.Model):
-    item_hash = models.IntegerField()
+    item_hash = models.BigIntegerField()
     milestone = models.URLField()
     url = models.URLField()
     name = models.CharField(max_length=255)
