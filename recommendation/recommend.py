@@ -16,8 +16,9 @@ from coach import settings
 from operator import itemgetter
 from collections import defaultdict
 import apriori
+import time
 
-def recommend(recommendationfunction='apriori', **kwargs):
+def recommend(recommendationfunction='apriori', inputverbs=None, **kwargs):
     '''Generate new recommendation rules for every assignment that is of some
     importance, based on completed and launched media, questions, assessments.
 
@@ -38,9 +39,13 @@ def recommend(recommendationfunction='apriori', **kwargs):
                 settings.TINCAN['password'],
                 settings.TINCAN['endpoint'])
 
-    # Get all info from users who completed stuff
-    statement_filter = {'verb': tc.VERBS['completed']['id']}
-    statements = tc.getFilteredStatements(statement_filter)
+    # By default, get all info from users who completed
+    if inputverbs:
+        verbs = [tc.VERBS[verb]['id'] for verb in inputverbs]
+    else:
+        verbs = [tc.VERBS['completed']['id']]
+
+    statements = tc.getAllStatements()
 
     # Loop over reverse chronological data
     milestones = defaultdict(lambda : 'NO_ASSESSMENT')       # progress per actor
@@ -50,6 +55,9 @@ def recommend(recommendationfunction='apriori', **kwargs):
     name_description = dict()
 
     for statement in statements['statements']:
+        if statement['verb']['id'] not in verbs:
+            continue
+
         actor = statement['actor']['mbox']     # TODO replace mbox by ID
         name_description[statement['object']['id']] = \
                 (statement['object']['definition']['name'],
@@ -70,11 +78,9 @@ def recommend(recommendationfunction='apriori', **kwargs):
             if assessment_id == 'NO_ASSESSMENT':
                 continue
 
-            statement_tup = (statement['verb']['id'],
-                             statement['object']['id'])
-            transactions[assessment_id][actor].append(statement_tup)
-            freq[assessment_id][0][(statement_tup,)] += 1
-
+            statement_obj = statement['object']['id']
+            transactions[assessment_id][actor].append(statement_obj)
+            freq[assessment_id][0][(statement_obj,)] += 1
 
     # Use baskets as transactions and recommend
     rulebase = []
@@ -104,4 +110,5 @@ def recommend(recommendationfunction='apriori', **kwargs):
     return rulebase, name_description
 
 if __name__=="__main__":
-    recommend('apriori', minsup=float(sys.argv[1]), minconf=float(sys.argv[2]))
+    recommend('apriori', minsup=float(sys.argv[1]), minconf=float(sys.argv[2]),
+            inputverbs=['suspended', 'completed'])
