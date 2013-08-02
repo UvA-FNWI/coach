@@ -1,10 +1,17 @@
+'''
+Adaptation of tincan API for Python to work with latest tincan.
+Contains lists of verbs and definition of activities specifically
+for the COACH project.
+
+Auth: Sander Latour, Auke Wiggers
+Date: 29-07-2013
+'''
+
 from requests.auth import HTTPBasicAuth
 import requests
 import json
 import urllib
 import uuid
-#import dataValidation
-
 
 class TinCan(object):
   VERSIONHEADER="X-Experience-API-Version"
@@ -52,7 +59,6 @@ class TinCan(object):
                     auth=HTTPBasicAuth(self._userName,self._secret),
                     headers={"Content-Type":"application/json",
                              self.VERSIONHEADER:self.VERSION})
-      #return eval(resp.text)[0]
 
     except IOError as e:
       if self.logger is not None:

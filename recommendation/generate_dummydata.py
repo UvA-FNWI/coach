@@ -1,3 +1,11 @@
+'''
+Simulates one student by completing/suspending a given list of assignments,
+based on some probability of success.
+
+Auth: Auke Wiggers
+Date: 30-07-2013
+'''
+
 import sys
 import os
 parentdir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))

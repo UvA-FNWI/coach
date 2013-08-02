@@ -96,7 +96,6 @@ def recommend(recommendationfunction='apriori', **kwargs):
                     'consequent': conse,         # RHS
                     'confidence': confidence,    # Confidence for LHS->RHS
                     'support': support}          # Support for the rule
-
             rulebase.append(rule)
 
     return rulebase
