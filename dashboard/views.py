@@ -2,9 +2,14 @@ from django.http import HttpResponse
 from django.shortcuts import render, get_object_or_404
 from django.contrib.auth import authenticate, login
 from django.conf import settings
+from django.db import transaction
 from recommendation.recommend import recommend
+from models import Recommendation
 import tincan_api
 import json
+
+
+from pprint import pformat, pprint
 
 
 # Create tincan object
@@ -22,12 +27,51 @@ def index(request):
 
 
 # Recommendations
-def apriori(request):
-    recommend.recommend
+@transaction.commit_manually
+def generate_recommendations(request):
+    r_list, r_dict = recommend(minsup=3, minconf=.5)
+
+    # Add recommendations to database
+    Recommendation.objects.all().delete()
+    i = 0
+    for r in r_list:
+        item_hash = hash(r['antecedent'])
+        confidence = r['confidence']
+        support = r['support']
+        milestone = r['milestone']
+        # Store each recommendation separately
+        for consequent in r['consequent']:
+            url = consequent[1]
+            name = r_dict[url][0]
+            description = r_dict[url][1]
+            # This should be update_or_create in Django 1.6
+            i += 1
+            print i
+            try:
+                rec = Recommendation.objects.get(item_hash=item_hash,
+                                                 url=url)
+                rec.confidence = confidence
+                rec.support = support
+                rec.milestone = milestone
+                rec.name = name
+                rec.description = description
+                rec.save()
+            except Recommendation.DoesNotExist:
+                rec = Recommendation(item_hash=item_hash,
+                                     confidence=confidence,
+                                     support=support,
+                                     milestone=milestone,
+                                     name=name,
+                                     url=url,
+                                     description=description)
+                rec.save()
+
+    transaction.commit()
+    return HttpResponse(pformat(r_list))
 
 
 # TinCan
-def tincan_get(request):
+def get_statements(request):
     obj = {'actor': {'name': request.user, 'objectType': 'Agent'}}
     tc_resp = tincan.getFilteredStatements(obj)
     return HttpResponse(json.dumps(tc_resp['statements']))

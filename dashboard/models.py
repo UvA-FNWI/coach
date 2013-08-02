@@ -2,16 +2,18 @@ from django.db import models
 
 
 class Recommendation(models.Model):
-    task_url = models.URLField()
-    items_hash = models.IntegerField()
-    recommendation_url = models.URLField()
-    recommendation_name = models.CharField(max_length=255)
+    item_hash = models.IntegerField()
+    milestone = models.URLField()
+    url = models.URLField()
+    name = models.CharField(max_length=255)
+    description = models.CharField(max_length=255)
     confidence = models.FloatField()
+    support = models.IntegerField()
     timestamp = models.DateTimeField(auto_now=True)
 
     def __unicode__(self):
-        return self.recommendation_name
+        return self.name
 
     def __html__(self):
-        return '<a href="' + str(recommendation_url) + '" >' + \
-               str(recommendation_name) + '</a>'
+        return '<a href="' + str(self.url) + '" >' + \
+               str(self.name) + '</a>'
