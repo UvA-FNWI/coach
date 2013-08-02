@@ -16,31 +16,39 @@ import random
 import time
 import string
 
-ASSIGNMENTS = [('http://www.uva.nl/question1', 'question'),
-               ('http://www.uva.nl/question2', 'question'),
-               ('http://www.uva.nl/media1', 'media'),
-               ('http://www.uva.nl/media2', 'media'),
-               ('http://www.uva.nl/assessment1', 'assessment'),
-               ('http://www.uva.nl/question3', 'question'),
-               ('http://www.uva.nl/question4', 'question'),
-               ('http://www.uva.nl/question5', 'question'),
-               ('http://www.uva.nl/assessment2', 'assessment')]
+ASSIGNMENTS = [('http://www.uva.nl/question1', 'question1', 'question'),
+               ('http://www.uva.nl/question2', 'question2', 'question'),
+               ('http://www.uva.nl/media1', 'media1', 'media'),
+               ('http://www.uva.nl/media2', 'media2', 'media'),
+               ('http://www.uva.nl/assessment1', 'assessment1', 'assessment'),
+               ('http://www.uva.nl/question3', 'question3', 'question'),
+               ('http://www.uva.nl/question4', 'question4', 'question'),
+               ('http://www.uva.nl/question5', 'question5', 'question'),
+               ('http://www.uva.nl/assessment2', 'assessment2', 'assessment')]
 
+ACTIVITY_TYPES = {
+    'assessment': 'http://adlnet.gov/expapi/activities/assessment',
+    'media': 'http://adlnet.gov/expapi/activities/media',
+    'question': 'http://adlnet.gov/expapi/activities/question'
+                   }
 
 def simulate(_actor):
     '''Pick an assignment at random and complete it with some prob of
        success
     '''
-    for _id, _def in ASSIGNMENTS:
-        _object = activity_object(_id, _def)
+    for _id, name, _type in ASSIGNMENTS:
+        _object = activity_object(_id, name, _type)
         complete(_actor, _object, steps=1,
                 p_success=random.uniform(0.8, 1.0))
 
-def activity_object(_id, _activity):
+def activity_object(_id, name, _type):
     '''Create an object of type activity'''
-    return {'id': _id, 'definition': tc.ACTIVITY_DEF[_activity]}
+    return {'id': _id,
+            'definition': {'name': name,
+                           'type': ACTIVITY_TYPES[_type],
+                           'description': {'en-US': name}}}
 
-def complete(_actor, _object, steps=2, p_success=1.0):
+def complete(_actor, _object, steps=2   , p_success=1.0):
     '''Finish an object in steps by progressing through it'''
     for s in xrange(steps):
         progressed(_actor, _object, 1.0 / steps)

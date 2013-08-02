@@ -47,13 +47,16 @@ def recommend(recommendationfunction='apriori', **kwargs):
     assessment_ids = []
     transactions = dict()
     freq = dict()
+    name_description = dict()
 
     for statement in statements['statements']:
         actor = statement['actor']['mbox']     # TODO replace mbox by ID
-        assessment_id = statement['object']['id']
+        name_description[statement['object']['id']] = \
+                (statement['object']['definition']['name'],
+                 statement['object']['definition']['description'])
 
         # Use assessments to separate timeslices per actor
-        if statement['object']['definition']['type'] == tc.ACTIVITY_DEF['assessment']['type']:
+        if statement['object']['definition']['type'] == tc.ACTIVITY_TYPES['assessment']:
             assessment_id = statement['object']['id']
             milestones[actor] = assessment_id                # For every milestone:
 
@@ -98,7 +101,7 @@ def recommend(recommendationfunction='apriori', **kwargs):
                     'support': support}          # Support for the rule
             rulebase.append(rule)
 
-    return rulebase
+    return rulebase, name_description
 
 if __name__=="__main__":
     recommend('apriori', minsup=float(sys.argv[1]), minconf=float(sys.argv[2]))
