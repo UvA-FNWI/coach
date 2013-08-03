@@ -173,7 +173,6 @@ def apriori_genrules(L, l_k, support_l_k, k, H_m, m, minconf,
         if (m+1) < max_consequent_size:
             for h_mplus1 in H_mplus1.keys():
                 difference =  tuple(l for l in l_k if not l in h_mplus1)
-                print k, m, difference, h_mplus1
 
                 # Conf = support(l_k) / support(l_k - h_m+1)
                 conf = support_l_k / float(L[len(difference)-1][difference])

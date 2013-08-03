@@ -46,6 +46,7 @@ def recommend(recommendationfunction='apriori', inputverbs=None, **kwargs):
         verbs = [tc.VERBS['completed']['id']]
     max_consequent_size = kwargs['max_consequent_size'] if \
             'max_consequent_size' in kwargs else 1
+    verbose = kwargs['verbose'] if 'verbose' in kwargs else False
 
     now = time.time()
     statements = tc.getAllStatements()
@@ -100,8 +101,8 @@ def recommend(recommendationfunction='apriori', inputverbs=None, **kwargs):
 
             print 'Generating rules for assessment ', assessment_id
             rules = apriori.generate_rules(apriori.apriori, D, L, minsup,
-                                           minconf, max_consequent_size=1,
-                                           verbose=False, veryverbose=False)
+                                           minconf, max_consequent_size,
+                                           verbose=verbose, veryverbose=False)
 
         # Save found rules based on the relevant assessment.
         for ante, conse, confidence, support in rules:
@@ -116,4 +117,4 @@ def recommend(recommendationfunction='apriori', inputverbs=None, **kwargs):
 
 if __name__=="__main__":
     recommend('apriori', minsup=float(sys.argv[1]), minconf=float(sys.argv[2]),
-            inputverbs=['completed'])
+            inputverbs=['completed'], max_consequent_size=3, verbose=True)
