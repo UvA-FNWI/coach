@@ -47,7 +47,6 @@ def recommend(recommendationfunction='apriori', inputverbs=None, **kwargs):
     max_consequent_size = kwargs['max_consequent_size'] if \
             'max_consequent_size' in kwargs else 1
 
-
     now = time.time()
     statements = tc.getAllStatements()
     print 'Time taken: {0:2g}'.format(time.time() - now)
