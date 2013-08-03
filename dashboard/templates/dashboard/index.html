@@ -1,7 +1,30 @@
 {% extends 'dashboard/base.html' %}
 
 {% block content %}
-{% include 'dashboard/table.html' %}
-{% endblock %}
-
+<div class="row">
+	<div class="col-lg-6">
+		<table class="table">
+		{% for url, statement in statements.iteritems %}
+			<tr>
+				<td>
+					{{ statement.time }}
+				</td>
+				<td>
+					{{ statement.verb }}
+				</td>
+				<td>
+					<a data-toggle="tooltip" data-original-title="{{ statement.desc}}"
+						id="{{ statement.id }}" href="{{ url }}" >{{ statement.name }}</a>
+					<script type="text/javascript">
+						$('#{{ statement.id }}').tooltip();
+					</script>
+				</td>
+			<tr>
+		{% endfor %}
+		</table>
+		{% endblock %}
+	</div>
+	<div class="col-lg-6">
+	</div>
+</div>
 {# vim: set ft=htmldjango ts=2 sw=2 softtabstop=2: #}

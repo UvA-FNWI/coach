@@ -22,9 +22,27 @@ tincan = tincan_api.TinCan(USERNAME, PASSWORD, ENDPOINT)
 
 # dashboard
 def index(request):
+    mbox = 'mailto:5ETUPQXP1V@uva.nl'
+    obj = {'agent': {'mbox': mbox}}
+    tc_resp = tincan.getFilteredStatements(obj)
+    statements = {}
+    for s in tc_resp['statements']:
+        try:
+            d = s['object']['definition']
+            name = d['name']['en-US']
+            desc = d['description']['en-US']
+            url = s['object']['id']
+            statements[url] = {'mbox': s['actor']['mbox'],
+                               'name': name,
+                               'desc': desc,
+                               'id': s['id'],
+                               'verb': s['verb']['display']['en-US'],
+                               'time': s['timestamp'].split(' ')[0]}
+        except KeyError as e:
+            print 'Error:', e
+    pprint(statements)
     return render(request, 'dashboard/index.html',
-                  {'session': request.session})
-
+                  {'statements': statements})
 
 # Recommendations
 
@@ -34,6 +52,7 @@ def get_recommendations(request):
     # FIXME do something
 
 
+# Recommendation
 @transaction.commit_manually
 def generate_recommendations(request):
     r_list, r_dict = recommend(minsup=4, minconf=.5)
@@ -63,10 +82,3 @@ def generate_recommendations(request):
 
     transaction.commit()
     return HttpResponse(pformat(r_list))
-
-
-# TinCan
-def get_statements(request):
-    obj = {'actor': {'name': request.user, 'objectType': 'Agent'}}
-    tc_resp = tincan.getFilteredStatements(obj)
-    return HttpResponse(json.dumps(tc_resp['statements']))

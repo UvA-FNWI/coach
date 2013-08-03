@@ -11,5 +11,4 @@ urlpatterns = patterns('',
         url(r'^recommend$', views.get_recommendations,
             name='get recommendations'),
         #url(r'^apriori/(?P<minsup>\d+(.\d+)?)/$', views.apriori, name='apriori'),
-        url(r'^api/statements$', views.get_statements, name='get statements'),
         )
