@@ -44,8 +44,13 @@ def recommend(recommendationfunction='apriori', inputverbs=None, **kwargs):
         verbs = [tc.VERBS[verb]['id'] for verb in inputverbs]
     else:
         verbs = [tc.VERBS['completed']['id']]
+    max_consequent_size = kwargs['max_consequent_size'] if \
+            'max_consequent_size' in kwargs else 1
 
+
+    now = time.time()
     statements = tc.getAllStatements()
+    print 'Time taken: {0:2g}'.format(time.time() - now)
 
     # Loop over reverse chronological data
     milestones = defaultdict(lambda : 'NO_ASSESSMENT')       # progress per actor
@@ -66,11 +71,11 @@ def recommend(recommendationfunction='apriori', inputverbs=None, **kwargs):
         # Use assessments to separate timeslices per actor
         if statement['object']['definition']['type'] == tc.ACTIVITY_TYPES['assessment']:
             assessment_id = statement['object']['id']
-            milestones[actor] = assessment_id                # For every milestone:
+            milestones[actor] = assessment_id       # For every milestone:
 
             # Keep track of all assessments in reverse chronological order as well
             if not assessment_id in assessment_ids:
-                transactions[assessment_id] = defaultdict(list)  # verbs+objects per actor
+                transactions[assessment_id] = defaultdict(list) # verbs+objects /actor
                 freq[assessment_id] = {0: defaultdict(int)}     # frequency of 1-pairs
                 assessment_ids.append(assessment_id)
         else:
@@ -90,17 +95,18 @@ def recommend(recommendationfunction='apriori', inputverbs=None, **kwargs):
 
         rules = []
         if recommendationfunction == 'apriori':
-            # TODO choose between apriori / TID / hybrid
+            # TODO choose between apriori / TID / (hybrid)
             minsup = kwargs['minsup']
             minconf = kwargs['minconf']
 
             print 'Generating rules for assessment ', assessment_id
             rules = apriori.generate_rules(apriori.apriori, D, L, minsup,
-                                   minconf, verbose=False, veryverbose=False)
+                                           minconf, max_consequent_size=1,
+                                           verbose=False, veryverbose=False)
 
         # Save found rules based on the relevant assessment.
         for ante, conse, confidence, support in rules:
-            rule = {'milestone': assessment_id,  # id indicating relevant assessment
+            rule = {'milestone': assessment_id,  # id indicating assessment
                     'antecedent': ante,          # LHS
                     'consequent': conse,         # RHS
                     'confidence': confidence,    # Confidence for LHS->RHS
@@ -111,4 +117,4 @@ def recommend(recommendationfunction='apriori', inputverbs=None, **kwargs):
 
 if __name__=="__main__":
     recommend('apriori', minsup=float(sys.argv[1]), minconf=float(sys.argv[2]),
-            inputverbs=['suspended', 'completed'])
+            inputverbs=['completed'])

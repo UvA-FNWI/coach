@@ -23,7 +23,7 @@ def apriori(D, L, minsup=2, verbose=True):
     k = 1
 
     while len(L[k-1]) > 0:
-        C_k = apriori_gen(L[k-1], k)            # create new candidate
+        C_k = apriori_gen(L[k-1], k)         # create new candidate
         for transaction in D.itervalues():
             C_t = subset(C_k, transaction)   # candidates contained in t
             for candidate in C_t:
@@ -111,8 +111,8 @@ def apriori_gen(L_kmin1, k):
                 C_k[candidate] = 0
     return C_k
 
-def generate_rules(apriori_function, D, L, minsup, minconf, verbose,
-        veryverbose=False):
+def generate_rules(apriori_function, D, L, minsup, minconf,
+                   max_consequent_size, verbose, veryverbose=False):
     ''' Using an apriori candidate generation function, find the itemsets
     for k >= 1. Then, use these candidates to find association rules.
 
@@ -129,7 +129,7 @@ def generate_rules(apriori_function, D, L, minsup, minconf, verbose,
             H_0 = {(element,) : support for element in l_k}
 
             new_rules = apriori_genrules(L, l_k, support, k, H_0, 0, minconf,
-                    verbose=veryverbose)
+                                         max_consequent_size, veryverbose)
 
             if verbose and len(new_rules):
                 for a, c, conf, supp in new_rules:
@@ -143,7 +143,8 @@ def generate_rules(apriori_function, D, L, minsup, minconf, verbose,
 
     return rules
 
-def apriori_genrules(L, l_k, support_l_k, k, H_m, m, minconf, verbose):
+def apriori_genrules(L, l_k, support_l_k, k, H_m, m, minconf,
+                     max_consequent_size, verbose):
     '''Based on aprioris itemsets, association rules can be generated given a
     confidence threshold.
 
@@ -158,24 +159,22 @@ def apriori_genrules(L, l_k, support_l_k, k, H_m, m, minconf, verbose):
     '''
     rules = set()
 
-    if (k > m + 1):
+    if k > m + 1:
         H_mplus1 = apriori_gen(H_m, m+1)
+        if (k - m) <= max_consequent_size + 1:
+            for h_mplus1 in H_mplus1.keys():
+                difference =  tuple(l for l in l_k if not l in h_mplus1)
 
-        for h_mplus1 in H_mplus1.keys():
-            difference =  tuple(l for l in l_k if not l in h_mplus1)
-            # Conf = support(l_k) / support(l_k - h_m+1)
-            conf = support_l_k / float(L[len(difference)-1][difference])
-            if conf >= minconf:
-                rules.add((h_mplus1, difference, conf, support_l_k))
-            else:
-                del H_mplus1[h_mplus1]
+                # Conf = support(l_k) / support(l_k - h_m+1)
+                conf = support_l_k / float(L[len(difference)-1][difference])
+                if conf >= minconf:
+                    rules.add((h_mplus1, difference, conf, support_l_k))
+                else:
+                    del H_mplus1[h_mplus1]
 
         rules |= apriori_genrules(L, l_k, support_l_k, k, H_mplus1, m+1,
-                                  minconf, verbose)
-
+                                  minconf, max_consequent_size, verbose)
     return rules
-
-
 
 def items_to_setofitemsets(d):
     setofitemsets = dict()
@@ -197,7 +196,8 @@ def display_dict(name, d):
 def display_item(item):
     if isinstance(item, str) or isinstance(item, unicode):
         print item.split('/')[-1],
-    elif isinstance(item, list) or isinstance(item, tuple) or isinstance(item, set):
+    elif isinstance(item, list) or isinstance(item, tuple) or \
+            isinstance(item, set):
         for sub_item in item:
             display_item(sub_item)
         print ' ',
@@ -213,9 +213,10 @@ if __name__ == '__main__':
     D = {100: (1,3,4),
          200: (2,3,5),
          300: (1,2,3,5),
-         400: (2,5),}
-         #500: (1,2,3,4,5),
-         #600: (1,2,3,4,5) }
+         400: (2,5),
+         500: (1,2,3,4,5),
+         600: (1,2,3,4,5),
+         700: (1,2,3,5)}
 
     L = {0: defaultdict(int)}
     for v in D.itervalues():
@@ -234,4 +235,6 @@ if __name__ == '__main__':
 
     verbose=True
     apriori_function = apriori_TID
-    generate_rules(apriori_function, D, dict(L), minsup, minconf, verbose, veryverbose=True)
+
+    generate_rules(apriori_function, D, dict(L), minsup, minconf,
+                   max_consequent_size=1, verbose=True, veryverbose=True)
