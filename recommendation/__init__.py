@@ -117,4 +117,4 @@ def recommend(recommendationfunction='apriori', inputverbs=None, **kwargs):
 
 if __name__=="__main__":
     recommend('apriori', minsup=float(sys.argv[1]), minconf=float(sys.argv[2]),
-            inputverbs=['completed'], max_consequent_size=3, verbose=True)
+            inputverbs=['completed'], max_consequent_size=1, verbose=True)

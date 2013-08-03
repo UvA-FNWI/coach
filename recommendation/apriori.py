@@ -103,11 +103,15 @@ def apriori_gen(L_kmin1, k):
     '''
     C_k = dict()
 
-    for p, q in combinations(sorted(L_kmin1), 2):
+    list_of_sets = [set(key) for key in L_kmin1.iterkeys()]
+
+    for p, q in combinations(L_kmin1, 2):
         if p[:k-1] == q[:k-1]:
             candidate = p[:k-1] + tuple(sorted((p[k-1], q[k-1])))
-            if not any( (subset_c not in L_kmin1 for subset_c in
-                      combinations(candidate, k)) ):
+            # TODO perhaps implement this more efficiently? Useful for large
+            # candidate sets, as combinations can be expensive for >k
+            if not any( set(subset_c) not in list_of_sets for subset_c in
+                        combinations(candidate, k)):
                 C_k[candidate] = 0
     return C_k
 
@@ -168,20 +172,19 @@ def apriori_genrules(L, l_k, support_l_k, k, H_m, m, minconf,
     '''
     rules = set()
 
-    if k > m + 1:
-        H_mplus1 = apriori_gen(H_m, m+1)
-        if (m+1) < max_consequent_size:
-            for h_mplus1 in H_mplus1.keys():
-                difference =  tuple(l for l in l_k if not l in h_mplus1)
+    if k > m + 1 and m + 1 < max_consequent_size:
+        H_mplus1 = apriori_gen(H_m, m + 1)
+        for h_mplus1 in H_mplus1.keys():
+            difference =  tuple(l for l in l_k if not l in h_mplus1)
 
-                # Conf = support(l_k) / support(l_k - h_m+1)
-                conf = support_l_k / float(L[len(difference)-1][difference])
-                if conf >= minconf:
-                    rules.add((difference, h_mplus1, conf, support_l_k))
-                else:
-                    del H_mplus1[h_mplus1]
+            # Conf = support(l_k) / support(l_k - h_m+1)
+            conf = support_l_k / float(L[len(difference) - 1][difference])
+            if conf >= minconf:
+                rules.add((difference, h_mplus1, conf, support_l_k))
+            else:
+                del H_mplus1[h_mplus1]
 
-        rules |= apriori_genrules(L, l_k, support_l_k, k, H_mplus1, m+1,
+        rules |= apriori_genrules(L, l_k, support_l_k, k, H_mplus1, m + 1,
                                   minconf, max_consequent_size, verbose)
     return rules
 
@@ -223,9 +226,9 @@ if __name__ == '__main__':
          200: (2,3,5),
          300: (1,2,3,5),
          400: (2,5),
-         500: (1,2,3,4,5),
-         600: (1,2,3,4,5),
-         700: (1,2,3,5)}
+         500: (1,2,4,5,3),
+         600: (1,3,2,4,5),
+         700: (1,2,5,4)}
 
     L = {0: defaultdict(int)}
     for v in D.itervalues():
@@ -246,4 +249,4 @@ if __name__ == '__main__':
     apriori_function = apriori_TID
 
     generate_rules(apriori_function, D, dict(L), minsup, minconf,
-                   max_consequent_size=1, verbose=True, veryverbose=True)
+                   max_consequent_size=4, verbose=True, veryverbose=True)
