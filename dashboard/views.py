@@ -3,7 +3,7 @@ from django.shortcuts import render, get_object_or_404
 from django.contrib.auth import authenticate, login
 from django.conf import settings
 from django.db import transaction
-from recommendation.recommend import recommend
+from recommendation import recommend
 from models import Recommendation
 import tincan_api
 import json
