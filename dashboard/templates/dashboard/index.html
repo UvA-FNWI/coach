@@ -4,19 +4,19 @@
 <div class="row">
 	<div class="col-lg-6">
 		<table class="table">
-		{% for url, statement in statements.iteritems %}
+		{% for s in statements %}
 			<tr>
 				<td>
-					{{ statement.time }}
+					{{ s.time }}
 				</td>
 				<td>
-					{{ statement.verb }}
+					{{ s.verb }}
 				</td>
 				<td>
-					<a data-toggle="tooltip" data-animation="false" data-original-title="{{ statement.desc}}"
-						id="{{ statement.id }}" href="{{ url }}" >{{ statement.name }}</a>
+					<a data-toggle="tooltip" data-animation="false" data-original-title="{{ s.desc}}"
+						id="{{ s.id }}" href="{{ s.url }}" >{{ s.name }}</a>
 					<script type="text/javascript">
-						$('#{{ statement.id }}').tooltip();
+						$('#{{ s.id }}').tooltip();
 					</script>
 				</td>
 			<tr>

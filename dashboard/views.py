@@ -21,26 +21,32 @@ tincan = tincan_api.TinCan(USERNAME, PASSWORD, ENDPOINT)
 
 
 # dashboard
-def index(request):
-    mbox = 'mailto:5ETUPQXP1V@uva.nl'
+def index(request, view_all=False):
+    mbox = 'mailto:8EV0KG7AQT@uva.nl'
     obj = {'agent': {'mbox': mbox}}
     tc_resp = tincan.getFilteredStatements(obj)
-    statements = {}
-    for s in tc_resp['statements']:
+    statements = []
+    uris = set()
+    for s in tc_resp:
         try:
             d = s['object']['definition']
             name = d['name']['en-US']
             desc = d['description']['en-US']
             url = s['object']['id']
-            statements[url] = {'mbox': s['actor']['mbox'],
-                               'name': name,
-                               'desc': desc,
-                               'id': s['id'],
-                               'verb': s['verb']['display']['en-US'],
-                               'time': s['timestamp'].split(' ')[0]}
+            if view_all or (url not in uris):
+                statements.append({'mbox': s['actor']['mbox'],
+                                  'url': url,
+                                  'name': name,
+                                  'desc': desc,
+                                  'id': s['id'],
+                                  'verb': s['verb']['display']['en-US'],
+                                  'time': s['timestamp'].split(' ')[0]})
+                uris.add(url)
+            elif not view_all:
+                uris.add(url)
         except KeyError as e:
             print 'Error:', e
-    pprint(statements)
+    print len(statements)
     return render(request, 'dashboard/index.html',
                   {'statements': statements})
 
