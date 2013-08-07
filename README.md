@@ -14,9 +14,9 @@ Installation
 
 Setting up the database
 =======================
-(Make sure you are in the working directory)
-Create settings file:
- cp coach/settings.py.examle coach/settings.py
+Create settings file: (Make sure you are in the working directory)
+
+`cp coach/settings.py.examle coach/settings.py`
 
 Edit coach/settings.py to fill the LRS login data, then create the database:
 
