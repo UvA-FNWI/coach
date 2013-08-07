@@ -14,6 +14,7 @@ import json
 import urllib
 import uuid
 
+
 class TinCan(object):
     VERSIONHEADER = "X-Experience-API-Version"
     VERSION = "1.0.0"
@@ -105,6 +106,7 @@ class TinCan(object):
                                                          self.VERSIONHEADER : self.VERSION})
                 except ConnectionError as e:
                     if self.logger is not None:
+                        print "Error getting statements."
                         self.logger.error(e)
                     return statements
                 result = resp.json()
@@ -119,27 +121,42 @@ class TinCan(object):
                 self.logger.error(e)
 
     def getFilteredStatements(self, inputDict):
+        ##Attempts to retrieve every TinCan Statement from the End point
         queryObject = {}
         for key in ['result', 'agent', 'context', 'timestamp',
                                 'verb', 'object',
                                 'stored', 'authority', 'version', 'attachments']:
             if key in inputDict:
                 queryObject[key] = inputDict[key]
-
-        ##Encodes the query object into a query string
-        url = self._endpoint +"?"+ urllib.urlencode(queryObject)
-        ##If the URL Length exceeds max URL length then query using post
-        if (len(url)> 2048):
-            resp = requests.post(self._endpoint,
-                                 data = queryObject,
-                                 auth = HTTPBasicAuth(self._userName,self._secret),
-                                 headers = {"Content-Type":"application/json",
-                                                     self.VERSIONHEADER:self.VERSION})
-            return resp.json()
-        else:
-            resp = requests.get(url,
-                                auth = HTTPBasicAuth(self._userName,self._secret),
-                                headers = {"Content-Type":"application/json",
-                                                 self.VERSIONHEADER:self.VERSION})
-            return resp.json()
-
+        self._endpoint = self._endpoint +"?"+ urllib.urlencode(queryObject)
+        try:
+            endpoint = self._endpoint
+            statements = []
+            while endpoint is not None:
+                try:
+                    if (len(endpoint)> 2048):
+                        resp = requests.post(self._endpoint,
+                                             data = queryObject,
+                                             auth = HTTPBasicAuth(self._userName,self._secret),
+                                             headers = {"Content-Type":"application/json",
+                                                                 self.VERSIONHEADER:self.VERSION})
+                    else:
+                        resp = requests.get(endpoint,
+                                            auth = HTTPBasicAuth(self._userName,self._secret),
+                                            headers = {"Content-Type":"application/json",
+                                                             self.VERSIONHEADER:self.VERSION})
+                except ConnectionError as e:
+                    if self.logger is not None:
+                        print "Error getting statements."
+                        self.logger.error(e)
+                    return statements
+                result = resp.json()
+                statements = statements + result["statements"]
+                if "more" in result and result["more"]:
+                    endpoint = urljoin(endpoint, result["more"])
+                else:
+                    endpoint = None
+            return statements
+        except IOError as e:
+            if self.logger is not None:
+                self.logger.error(e)
