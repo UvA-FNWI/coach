@@ -20,33 +20,36 @@ ENDPOINT = settings.TINCAN['endpoint']
 tincan = tincan_api.TinCan(USERNAME, PASSWORD, ENDPOINT)
 
 
-# dashboard
-def index(request, view_all=False):
-    mbox = 'mailto:8EV0KG7AQT@uva.nl'
-    obj = {'agent': {'mbox': mbox}}
-    tc_resp = tincan.getFilteredStatements(obj)
-    statements = []
+def parse_statements(objects, view_all=False):
     uris = set()
-    for s in tc_resp:
+    for s in objects:
         try:
             d = s['object']['definition']
             name = d['name']['en-US']
             desc = d['description']['en-US']
             url = s['object']['id']
             if view_all or (url not in uris):
-                statements.append({'mbox': s['actor']['mbox'],
-                                  'url': url,
-                                  'name': name,
-                                  'desc': desc,
-                                  'id': s['id'],
-                                  'verb': s['verb']['display']['en-US'],
-                                  'time': s['timestamp'].split(' ')[0]})
+                yield {'mbox': s['actor']['mbox'],
+                       'url': url,
+                       'name': name,
+                       'desc': desc,
+                       'id': s['id'],
+                       'verb': s['verb']['display']['en-US'],
+                       'time': s['timestamp'].split(' ')[0]}
                 uris.add(url)
             elif not view_all:
                 uris.add(url)
         except KeyError as e:
             print 'Error:', e
-    print len(statements)
+
+
+# dashboard
+def index(request):
+    mbox = 'mailto:8EV0KG7AQT@uva.nl'
+    obj = {'agent': {'mbox': mbox}}
+    tc_resp = tincan.getFilteredStatements(obj)
+    statements = parse_statements(tc_resp)
+    print statements
     return render(request, 'dashboard/index.html',
                   {'statements': statements})
 
