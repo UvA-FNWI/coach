@@ -150,12 +150,15 @@ class TinCan(object):
                         print "Error getting statements."
                         self.logger.error(e)
                     return statements
-                result = resp.json()
-                statements = statements + result["statements"]
-                if "more" in result and result["more"]:
-                    endpoint = urljoin(endpoint, result["more"])
-                else:
-                    endpoint = None
+                try:
+                    result = resp.json()
+                    statements = statements + result["statements"]
+                    if "more" in result and result["more"]:
+                        endpoint = urljoin(endpoint, result["more"])
+                    else:
+                        endpoint = None
+                except Exception as e:
+                    print "Error decoding response:", e
             return statements
         except IOError as e:
             if self.logger is not None:
