@@ -1,0 +1,136 @@
+
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+<head> <meta http-equiv="X-UA-Compatible" content="IE=EmulateIE7" />
+<link rel="stylesheet" type="text/css"  href="ddlevelsfiles/ddlevelsmenu-base.css" />
+<link rel="stylesheet" type="text/css"  href="ddlevelsfiles/ddlevelsmenu-topbar.css" />
+<link rel="stylesheet" type="text/css"  href="ddlevelsfiles/ddlevelsmenu-sidebar.css" />
+<script language="JavaScript" type="text/javascript" src="ddlevelsfiles/ddlevelsmenu.js">
+
+/***********************************************
+* All Levels Navigational Menu- (c) Dynamic Drive DHTML code library  (http://www.dynamicdrive.com)
+* This notice MUST stay intact for legal use
+* Visit Dynamic Drive at http://www.dynamicdrive.com/ for full source code
+***********************************************/
+</script>
+<script language="JavaScript" type="text/javascript" src="ddlevelsfiles/ddlevelsmenu_init.js"></script>
+<style type="text/css">
+@import url(base.css); 
+@import url(content.css); 
+@import url(nav.css);
+@import url(dynmodel.css);
+</style>
+<title>Chemisch rekenen</title>
+<script language="JavaScript" type="text/javascript" src="common.js"></script>
+<script language="JavaScript" type="text/javascript" src="dynmodel.js"></script>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8 ">
+<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+</head>
+<body onload="convert();dllmenuinit();">
+<!-- Begin Menu -->
+<div id="menucontainer">
+</div>
+<!--EINDE VAN HET MENU-->
+<script language="JavaScript" type="text/javascript" src="http://laupload.avwebs.nl/updatelinks.js"></script>
+<div id="main">
+     <div id="coach" style="margin: 10px; max-height: 100%; width: 20%; float: right;"></div>
+	 <!--Coach-->
+	 <script language="JavaScript" type="text/javascript" src="/static/dashboard/jquery-2.0.3.min.js"></script>
+	 <script language="JavaScript" type="text/javascript">
+	 $(document).ready(function(){$.get("http://localhost:8000",function(data){$('#coach').html(data)})});
+	 </script>
+	 <!--End Coach-->
+     <div id="nodeDecoration"><p id="nodeTitle"><a name="theorie1"></a>Werken met getallen in natuurwetenschappen</p>
+		 </div>
+     <div class="FreeTextIdevice" id="id402">
+		 <div class="iDevice emphasis0">
+		 <div id="ta402_1" class="block" style="DISPLAY:block">
+<h3>Decimaliseren</h3>
+<p>In natuurwetenschappen hebben getallen vaak betrekking op gemeten of berekende grootheden. Bij metingen of berekeningen spelen <i>significantie</i> (nauwkeurigheid) en <i>precisie</i> een grote rol. Dit wordt in de notatie van een getal zichtbaar gemaakt. Het getal \(3.00\) suggereert een grotere nauwkeurigheid en precisie dan \(3.0\). Breuken worden vaak gedecimaliseerd: \(\frac{1}{2}=0.5\), \(\frac{1}{20}=0.05\) en \(\frac{1}{8}=0.125\). 
+</p>
+<p>
+<i>Merk op dat we in deze module werken met een decimale punt, en niet met een decimale komma.</i>
+</p>
+<p>Dit stemt overeen met wat thans gangbaar is in de internationale wetenschappelijke en technische literatuur. Ook moet je op de meeste rekenmachines een decimale punt gebruiken. Delen zonder rekenmachine gaat met staartdeling. Hieronder zie je de staartdeling voor \(\frac{3}{8}\).</p>
+<div class="theory_example">
+<p>De decimale ontwikkeling van\(\frac{3}{8}\), bepaald via staartdeling, staat rechtsboven en om hier aan te komen is het deeltal 3 aangevuld met voldoende nullen achter de decimale punt (3 nullen volstaan hier).</p>
+<p style="text-align: center;">\[\begin{array}{rrl}<br />8\; / \!\!\! &amp; 3.000\ldots &amp; \!\!\! {\backslash} \; 0.375 \\<br />&amp; 2\phantom{.}\!4\phantom{00\ldots } &amp; \\<br />&amp; {}^\mathrm{\_\_\_}\phantom{00\ldots } &amp; \\<br />&amp; \phantom {3.}60\phantom{0\ldots } &amp; \\<br />&amp; \phantom {3.}56\phantom{0\ldots } &amp; \\<br />&amp; \phantom{3.}{}^\mathrm{\_\_\_}\!\phantom{0\ldots} &amp; \\<br />&amp; \phantom{3.0}40\,\phantom{\ldots} &amp; \\<br />&amp; \phantom{3.0}40\,\phantom{\ldots} &amp; \\<br />&amp; \phantom{3.0}{}^\mathrm{\_\_\_}\phantom{\ldots} &amp; \\<br />&amp; \phantom{3.00}0\,\phantom{\ldots} &amp; <br />\end{array}\]</p>
+</div>
+<p>
+In bovenstaand voorbeeld eindigt de decimale ontwikkeling. Bij andere breuken is er sprake van een oneindig voortlopende decimale ontwikkeling. Bijvoorbeeld,  \(\frac{2}{3}=0.666\ldots\).  In dergelijke gevallen geeft je de repeterende getallen weer of rond je af op een aantal cijfers achter de decimale punt, al naar de gewenste nauwkeurigheid: \(\frac{2}{3}\approx 0.7\)  in &eacute;&eacute;n decimaal, \(\frac{2}{3}\approx 0.67\) in twee decimalen en \(\frac{2}{3}\approx 0.6667\) in vijf decimalen.
+</p>
+<h3>Significantie en precisie</h3>
+<p>
+Het veel voorkomend misverstand is dat het aantal cijfers achter de decimale punt de nauwkeurigheid van een getal weergeeft, maar dit is strikt genomen onjuist: zij geven alleen de <i>precisie</i> van een getal aan.  Alleen het aantal <i>significante cijfers</i> in een getal zegt iets over de nauwkeurigheid (<i>significantie</i>) van dat getal. Dit zijn de cijfers die er toe doen; cijfers zonder betekenis kunnen we weglaten. Het aantal significante cijfers kun je met de volgende regels vaststellen:
+<ul>
+<li>alle cijfers ongelijk aan nul zijn significant;</li><li>alle nullen tussen cijfers ongelijk aan nul zijn significant;</li>
+<li>alle nullen rechts van de decimale punt zijn significant wanneer ze ooit voorafgegaan zijn door een cijfer ongelijk aan nul (&quot;nullen die rechts staan tellen mee&quot;);</li>
+<li>nullen die er alleen maar zijn om de positie van de decimale punt aan te geven zijn niet significant;</li>
+<li>nullen die weggelaten kunnen worden zonder de numerieke getalswaarde te veranderen zijn niet significant (&quot;nullen die links staan in een decimale notatie tellen niet mee&quot;)</li>
+</ul>
+Onderstaande tabel met voorbeelden illustreert de begrippen precisie en nauwkeurigheid. Met <i>precisie</i> bedoelen we de feitelijke positie van het meest rechtse significante cijfer in de decimale notatie. In de <i>wetenschappelijke notatie</i>  noteren  we  getalswaarden vaak als een product van een getal tussen 1 en 10 en een of andere macht van 10. De factor voor de 10-de macht bestaat dan uit alleen maar significante cijfers. In de volgende sectie gaan we verder in op de wetenschappelijke notatie. 
+</p>
+<p>
+\[\begin{array}{|l|l|l|l|} \hline
+\mathit{getal} & \mathit{significantie\phantom{XXXXXX}} & \mathit{precisie} & \mathit{wetenschappelijke} \\ 
+ & &  & \mathit{notatie} \\ 
+\hline
+1.205 & 4\mathrm{\; significante\;cijfers} & 3\mathrm{\; decimalen} & 1.205 \\ 
+12.05 & 4\mathrm{\; significante\;cijfers} & 2\mathrm{\; decimalen} & 1.205\times 10^1 \\
+0.0123 & 3\mathrm{\; significante\;cijfers} & 4\mathrm{\; decimalen} & 1.23\times 10^{-2}\\ 
+300 & 1\mathrm{\; significant\;cijfer} & \mathrm{hondertallen} & 3\times 10^2 \\ 
+0300 & 1\mathrm{\; significant\;cijfer} & \mathrm{honderdtallen}  & 3\times 10^2\\ 
+300. & 3\mathrm{\; significante\;cijfers} & \mathrm{eenheid} & 3.00\times 10^2 \\ 
+30.10 & 4\mathrm{\; significante\;cijfers} & 2\mathrm{\; decimalen} & 3.010\times 10^1 \\
+0.3 & 1\mathrm{\; significant\;cijfer} & 1\mathrm{\; decimaal} & 3. \times 10^{-1} \\ 
+0.30 & 2\mathrm{\; significante\;cijfers} & 2\mathrm{\; decimalen} & 3.0\times 10^{-1}\\ 
+0.0030 & 2\mathrm{\; significante\;cijfers} & 4\mathrm{\; decimalen} & 3.0 \times 10^{-3}\\ \hline
+\end{array}\]
+</p>
+<h3>Rekenregels: vermenigvuldiging en deling</h3>
+<p>
+Bij het rekenen met decimale getallen moet je de uitkomst steeds opschrijven met het juiste aantal significante cijfers en eventueel afronden op dit aantal cijfers. Onderstaand voorbeeld illustreert dit.</p>
+<div class="theory_example">
+<p>Een rechthoekige kamer heeft de volgende afmeting: \(2.5 \times 3.5 \mathrm{\;m}.\)&nbsp; Wat is de oppervlakte?</p>
+<p>Er geldt: \( 2.5 \times 4.5= 11.25\), maar dit getal heeft meer significante cijfers dan elk van de factoren. De nauwkeurigheid kan niet toenemen met een berekening en daarom ronden we af op 2 significante cijfers, in dit geval 11.</p>
+<p>De gevraagde oppervlakte is dus gelijk aan \(11 \mathrm{\;m}^2.\)</p>
+</div>
+<p>Je kunt bovenstaande ook als volgt interpreteren:</p>
+<p>Omdat de gemeten grootte van de kamer is opgegeven met getallen met een precisie van 1 decimaal is de afmeting van de kamer minimaal \(2.4 \times 4.4 \mathrm{\;m}\) en maximaal \(2.6 \times 4.6 \mathrm{\;m}.\) De oppervlakte ligt dit ergens tussen \(2.4 \times 4.4 = 10.56\) en \(2.6 \times 4.6 = 11.96\). Kijkend naar deze uitkomsten lijkt het redelijk tot op twee significante cijfers af te ronden.</p>
+<p>Bij berekeningen moet je evenwel niet tussentijds afronden, maar alleen de verkregen einduitkomst met behulp van onderstaande algemene regel:</p>
+<div class="theory_statement flippable">
+<p><em>Bij vermenigvuldiging en deling geldt:</em></p>
+<p><em>De uitkomst van een berekening heeft even veel cijfers als het gegeven met het minste aantal significante cijfers.</em></p>
+</p>
+</div>
+<h3>Rekenregels: optelling en verschil</h3>
+<p>
+Bij optellen en aftrekken van decimale getalswaarden voor grootheden gelden andere regels. Als je twee gemeten lengtes bij elkaar optelt, dan krijg je bijvoorbeeld \(123.4 \mathrm{\;cm} + 5.67 \mathrm{\;cm} = 129.07 \mathrm{\;cm}.\) Je moet het eindantwoord afronden tot \(129.1 \mathrm{\;cm}.\) De precisie van de eerste en tweede term is 1 resp. 2 decimalen. De precisie kan niet toenemen bij een berekening en daardoor kan in dit geval bij optellen het antwoord niet nauwkeuriger dan tot op \(0.1 \mathrm{\;cm}\) worden opgegeven.</p>
+<div class="theory_statement flippable">
+<p><em>Bij optellen en aftrekken geldt:</em></p>
+<p><em>De precisie van de uitkomst van een berekening is gelijk aan de laagste precisie van de aanwezige termen. </em></p>
+<p><em>Met andere woorden, de uitkomst van een berekening mag niet meer cijfers achter de decimale punt hebben dan het gegeven met het minste aantal cijfers achter de decimale punt.</em></p>
+<p>&nbsp;</p>
+</div>
+<h3>Extra uitleg en oefeningen</h3>
+<p>Voor wie meer wil weten over rekenen met significante cijfers verwijzen we naar uitleg en oefeningen op de Khan Academie:</p>
+<p><em>video:</em> <a href="http://www.khanacademie.nl/wiskunde/macht-en-wortel/v/22-significante-cijfers---scheikunde" target="_blank">http://www.khanacademie.nl/wiskunde/macht-en-wortel/v/22-significante-cijfers---scheikunde</a></p>
+<p><em>oefenen:</em>&nbsp;<a href="http://www.khanacademie.nl/wiskunde/macht-en-wortel/e/significant_figures_1" target="_blank">http://www.khanacademie.nl/wiskunde/macht-en-wortel/e/significant_figures_1</a></p>
+<p>Op deze site kun je ook meer leren over rekenen met breuken en met getallen in decimale notatie.</p>
+<p>&nbsp;</p>
+<p>Een Engelstalige bron over dit onderwerk is op de Khan Academy te vinden:</p>
+<p><a href="http://www.khanacademy.org/math/arithmetic/decimals/significant_figures_tutorial" target="_blank">www.khanacademy.org/math/arithmetic/decimals/significant_figures_tutorial</a></p><br/>
+<br/>
+<button class="naaropgaven" onclick="window.location='http://laupload.avwebs.nl/?rel=1&l=ICTWIS1_1_2_opg.html#opgavenGetallen'">Maak opgaven over getallen in natuurwetenschappen</button> 
+<br/>
+<br/>
+<!-- einde theorie -->
+</div>
+</div>
+<div class="noprt" align="right">
+  <font face="Verdana" size="2">
+  <a href="ICTWIS1_1_index.html">&laquo; Vorige</a> |
+  <a href="ICTWIS1_1_1_1.html">Volgende &raquo;</a></font></div>       
+</div>
+</div>
+</body>
+</html>

@@ -17,7 +17,6 @@ USERNAME = settings.TINCAN['username']
 PASSWORD = settings.TINCAN['password']
 ENDPOINT = settings.TINCAN['endpoint']
 
-tincan = tincan_api.TinCan(USERNAME, PASSWORD, ENDPOINT)
 
 
 def parse_statements(objects, view_all=False):
@@ -43,25 +42,28 @@ def parse_statements(objects, view_all=False):
             print 'Error:', e
 
 
+def getallen(request):
+    return render(request, 'dashboard/getallen.html', {})
+
 # dashboard
 def index(request):
+    tincan = tincan_api.TinCan(USERNAME, PASSWORD, ENDPOINT)
     mbox = 'mailto:8EV0KG7AQT@uva.nl'
     obj = {'agent': {'mbox': mbox}}
     tc_resp = tincan.getFilteredStatements(obj)
-    statements = parse_statements(tc_resp)
-    print statements
+    #tc_resp = tincan.getAllStatements()
+    statements = parse_statements(tc_resp, view_all=False)
     return render(request, 'dashboard/index.html',
                   {'statements': statements})
 
-# Recommendations
 
+# Recommendations
 def get_recommendations(request):
     item_hash = hash(sort(request.POST))
     Recommendation.objects.get(item_hash=item_hash)
     # FIXME do something
 
 
-# Recommendation
 @transaction.commit_manually
 def generate_recommendations(request):
     r_list, r_dict = recommend(minsup=4, minconf=.5)
