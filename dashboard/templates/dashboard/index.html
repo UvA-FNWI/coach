@@ -1,49 +1,91 @@
 {% load staticfiles %}
 {% block content %}
 <div id="coach" >
+	<link href="{% static 'dashboard/bootstrap.min.css' %}" rel="stylesheet" media="screen">
+	<link href="{% static 'dashboard/navbar.css' %}" rel="stylesheet" media="screen">
+	<script src="{% static 'dashboard/jquery-2.0.3.min.js' %}"></script>
+	<script src="{% static 'dashboard/bootstrap.min.js' %}"></script>
 
   <div class="container" style="width: 250px;">
 		<div class="navbar">
 			<div class="container">
 				<a class="navbar-brand" href="#">Coach</a>
 				<div class="nav-collapse collapse">
-					<ul class="nav navbar-nav">
-						<li class="active"><a href="#">Assessment</a></li>
-						<li><a href="#exercises">Exercises</a></li>
-						<li><a href="#video">Video</a></li>
+					<ul id="main-nav" class="nav navbar-nav">
+						<li class="active">
+							<a data-toggle="tab" href="#assessments">Assessments</a>
+						</li>
+						<li>
+							<a data-toggle="tab" href="#exercises">Exercises</a>
+						</li>
+						<li>
+							<a data-toggle="tab" href="#video">Video</a>
+						</li>
 					</ul>
-				</div><!--/.nav-collapse -->
+				</div>
 			</div>
 		</div>
 
-		<link href="{% static 'dashboard/bootstrap.min.css' %}" rel="stylesheet" media="screen">
-		<link href="{% static 'dashboard/navbar.css' %}" rel="stylesheet" media="screen">
-		<script src="{% static 'dashboard/bootstrap.min.js' %}"></script>
-		<div>
-			<table class="table table-condensed table-hover">
-			{% for s in statements %}
-				{% if s.verb == "progressed" %}
-				<tr class="success">
-				{% elif s.verb == "completed" %}
-				<tr class="">
-				{% elif s.verb == "suspended" %}
-				<tr class="warning">
-				{% else %}
-				<tr class="">
-				{% endif %}
-					<td>
-						<a data-toggle="tooltip" data-animation="false" data-original-title="{{ s.desc }}"
-							id="{{ s.id }}" href="{{ s.url }}" >{{ s.name }}</a><br />
-						<script type="text/javascript">
-							$('#{{ s.id }}').tooltip();
-						</script>
-						<small class="text-left text-muted">{{ s.verb }}</small>
-						<small class="pull-right text-muted">{{ s.time }}</small>
-					</td>
-				<tr>
-			{% endfor %}
-			</table>
+		<div id="main-tab" class="tab-content">
+			<div class="tab-pane active" id="assessments">
+				<script type="text/javascript">
+					$('a[href="assessments"]').click(function (e) {
+							e.preventDefault();
+							$(this).tab('show');
+					})
+				</script>
+				<table class="table table-condensed table-hover">
+				{% for s in statements %}
+					{% if s.verb == "progressed" %}
+					<tr class="success">
+					{% elif s.verb == "completed" %}
+					<tr class="">
+					{% elif s.verb == "suspended" %}
+					<tr class="warning">
+					{% else %}
+					<tr class="">
+					{% endif %}
+						<td>
+							<a data-toggle="tooltip" data-animation="false" data-original-title="{{ s.desc }}"
+								id="{{ s.id }}" href="{{ s.url }}" >{{ s.name }}</a><br />
+							<script type="text/javascript">
+								$('#{{ s.id }}').tooltip();
+							</script>
+							<small class="text-left text-muted">{{ s.verb }}</small>
+							<small class="pull-right text-muted">{{ s.time }}</small>
+						</td>
+					<tr>
+				{% endfor %}
+				</table>
+			</div>
+			<div class="tab-pane" id="exercises">
+				<script type="text/javascript">
+					$('a[href="exercises"]').click(function (e) {
+							e.preventDefault();
+							$(this).tab('show');
+					})
+				</script>
+				Exercises
+			</div>
+			<div class="tab-pane" id="video">
+				<script type="text/javascript">
+					$('a[href="video"]').click(function (e) {
+							e.preventDefault();
+							$(this).tab('show');
+					})
+				</script>
+				Video
+			</div>
 		</div>
+
+		<script type="text/javascript">
+			$('a[href="exercises"]').click(function (e) {
+					e.preventDefault();
+					$(this).tab('show');
+			})
+			$('#main-nav a[href="#assessments"]').tab('show');
+		</script>
+
   </div>
 </div>
 {% endblock %}
