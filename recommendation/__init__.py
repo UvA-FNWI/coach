@@ -16,6 +16,7 @@ from coach import settings
 from operator import itemgetter
 from collections import defaultdict
 import apriori
+import trail
 import time
 
 def recommend(recommendationfunction='apriori', inputverbs=None, **kwargs):
@@ -103,6 +104,12 @@ def recommend(recommendationfunction='apriori', inputverbs=None, **kwargs):
             rules = apriori.generate_rules(apriori.apriori, D, L, minsup,
                                            minconf, max_consequent_size,
                                            verbose=verbose, veryverbose=False)
+        elif recommendationfunction == 'trail':
+            gamma = kwargs['gamma']
+            minsupp = kwargs['minsup']
+            minconf = kwargs['minconf']
+
+            rules = trail.generate_rules(D, gamma, minsupp, minconf,verbose = verbose)
 
         # Save found rules based on the relevant assessment.
         for ante, conse, confidence, support in rules:
