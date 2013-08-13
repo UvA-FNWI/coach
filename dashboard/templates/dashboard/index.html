@@ -35,7 +35,7 @@
 					})
 				</script>
 				<table class="table table-condensed table-hover">
-				{% for s in statements %}
+				{% for s in assignments %}
 					{% if s.verb == "progressed" %}
 					<tr class="success">
 					{% elif s.verb == "completed" %}
@@ -65,7 +65,29 @@
 							$(this).tab('show');
 					})
 				</script>
-				Exercises
+				<table class="table table-condensed table-hover">
+				{% for s in exercises %}
+					{% if s.verb == "progressed" %}
+					<tr class="success">
+					{% elif s.verb == "completed" %}
+					<tr class="">
+					{% elif s.verb == "suspended" %}
+					<tr class="warning">
+					{% else %}
+					<tr class="">
+					{% endif %}
+						<td>
+							<a data-toggle="tooltip" data-animation="false" data-original-title="{{ s.desc }}"
+								id="{{ s.id }}" href="{{ s.url }}" >{{ s.name }}</a><br />
+							<script type="text/javascript">
+								$('#{{ s.id }}').tooltip();
+							</script>
+							<small class="text-left text-muted">{{ s.verb }}</small>
+							<small class="pull-right text-muted">{{ s.time }}</small>
+						</td>
+					<tr>
+				{% endfor %}
+				</table>
 			</div>
 			<div class="tab-pane" id="video">
 				<script type="text/javascript">
@@ -74,7 +96,29 @@
 							$(this).tab('show');
 					})
 				</script>
-				Video
+				<table class="table table-condensed table-hover">
+				{% for s in video %}
+					{% if s.verb == "progressed" %}
+					<tr class="success">
+					{% elif s.verb == "completed" %}
+					<tr class="">
+					{% elif s.verb == "suspended" %}
+					<tr class="warning">
+					{% else %}
+					<tr class="">
+					{% endif %}
+						<td>
+							<a data-toggle="tooltip" data-animation="false" data-original-title="{{ s.desc }}"
+								id="{{ s.id }}" href="{{ s.url }}" >{{ s.name }}</a><br />
+							<script type="text/javascript">
+								$('#{{ s.id }}').tooltip();
+							</script>
+							<small class="text-left text-muted">{{ s.verb }}</small>
+							<small class="pull-right text-muted">{{ s.time }}</small>
+						</td>
+					<tr>
+				{% endfor %}
+				</table>
 			</div>
 		</div>
 

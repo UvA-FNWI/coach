@@ -5,7 +5,7 @@ from django.conf import settings
 from django.db import transaction
 from recommendation import recommend
 from models import Recommendation
-import tincan_api
+from tincan_api import TinCan
 import json
 
 
@@ -18,8 +18,9 @@ PASSWORD = settings.TINCAN['password']
 ENDPOINT = settings.TINCAN['endpoint']
 
 
-
+"""
 def parse_statements(objects, view_all=False):
+    r = []
     uris = set()
     for s in objects:
         try:
@@ -28,33 +29,91 @@ def parse_statements(objects, view_all=False):
             desc = d['description']['en-US']
             url = s['object']['id']
             if view_all or (url not in uris):
-                yield {'mbox': s['actor']['mbox'],
-                       'url': url,
-                       'name': name,
-                       'desc': desc,
-                       'id': s['id'],
-                       'verb': s['verb']['display']['en-US'],
-                       'time': s['timestamp'].split(' ')[0]}
+                r.append({'mbox': s['actor']['mbox'],
+                          'url': url,
+                          'name': name,
+                          'desc': desc,
+                          'id': s['id'],
+                          'verb': s['verb']['display']['en-US'],
+                          'time': s['timestamp'].split(' ')[0]})
                 uris.add(url)
             elif not view_all:
                 uris.add(url)
         except KeyError as e:
             print 'Error:', e
+    return r
+"""
 
 
+def parse_statements(objects):
+    COMPLETED = TinCan.VERBS['completed']['id']
+    ANSWERED = TinCan.VERBS['answered']['id']
+    r = {}
+    for s in objects:
+        try:
+            verb_t = s['object']['definition']['type']
+            d = s['object']['definition']
+            name = d['name']['en-US']
+            desc = d['description']['en-US']
+            url = s['object']['id']
+            if not verb_t == ANSWERED and ((url not in r) or verb_t == COMPLETED):
+                r[url] = {'mbox': s['actor']['mbox'],
+                                    'url': url,
+                                    'name': name,
+                                    'desc': desc,
+                                    'id': s['id'],
+                                    'verb': s['verb']['display']['en-US'],
+                                    'time': s['timestamp'].split(' ')[0]}
+        except KeyError as e:
+            print 'Error:', e
+    print r.values()
+    return r.values()
+
+
+def split_statements(statements):
+    r = {}
+    r['assignments'] = []
+    r['exercises'] = []
+    r['video'] = []
+    r['rest'] = []
+    for s in statements:
+        try:
+            type = s['object']['definition']['type']
+        except:
+            continue
+        if type == TinCan.ACTIVITY_TYPES['assessment']:
+            r['assignments'].append(s)
+        elif type == TinCan.ACTIVITY_TYPES['question']:
+            r['exercises'].append(s)
+        elif type == TinCan.ACTIVITY_TYPES['media']:
+            r['video'].append(s)
+        else:
+            r['rest'].append(s)
+    return r
+
+
+# FIXME: This is just for testing
 def getallen(request):
     return render(request, 'dashboard/getallen.html', {})
 
+
 # dashboard
 def index(request):
-    tincan = tincan_api.TinCan(USERNAME, PASSWORD, ENDPOINT)
-    mbox = 'mailto:8EV0KG7AQT@uva.nl'
+    tincan = TinCan(USERNAME, PASSWORD, ENDPOINT)
+    mbox = 'mailto:martin.latour@student.uva.nl'
     obj = {'agent': {'mbox': mbox}}
-    tc_resp = tincan.getFilteredStatements(obj)
-    #tc_resp = tincan.getAllStatements()
-    statements = parse_statements(tc_resp, view_all=False)
+    #tc_resp = tincan.getFilteredStatements(obj)
+    tc_resp = tincan.getAllStatements()
+    statements = split_statements(tc_resp)
+
+    assignments = parse_statements(statements['assignments'])
+    exercises = parse_statements(statements['exercises'])
+    video = parse_statements(statements['video'])
+
     return render(request, 'dashboard/index.html',
-                  {'statements': statements})
+                  {'assignments': assignments,
+                   'exercises': exercises,
+                   'video': video})
 
 
 # Recommendations
