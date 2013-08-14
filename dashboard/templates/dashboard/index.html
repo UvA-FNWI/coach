@@ -6,10 +6,11 @@
 	<script src="{% static 'dashboard/jquery-2.0.3.min.js' %}"></script>
 	<script src="{% static 'dashboard/bootstrap.min.js' %}"></script>
 
-  <div class="container" style="width: 250px;">
-		<div class="navbar">
+  <div class="container" style="width: 250px; -webkit-box-shadow: -1px 2px 8px
+		#BBB; -moz-box-shadow: -1px 2px 8px #BBB; box-shadow: -1px 2px 8px #BBB;
+		border-top-left-radius: 4px; border-top-right-radius: 4px;">
+		<div class="navbar" style="">
 			<div class="container">
-				<a class="navbar-brand" href="#">Coach</a>
 				<div class="nav-collapse collapse">
 					<ul id="main-nav" class="nav navbar-nav">
 						<li class="active">
@@ -36,23 +37,24 @@
 				</script>
 				<table class="table table-condensed table-hover">
 				{% for s in assignments %}
-					{% if s.verb == "progressed" %}
+					{% if s.score >= 80 %}
 					<tr class="success">
-					{% elif s.verb == "completed" %}
-					<tr class="">
-					{% elif s.verb == "suspended" %}
-					<tr class="warning">
 					{% else %}
 					<tr class="">
 					{% endif %}
 						<td>
-							<a data-toggle="tooltip" data-animation="false" data-original-title="{{ s.desc }}"
-								id="{{ s.id }}" href="{{ s.url }}" >{{ s.name }}</a><br />
+							<a data-toggle="tooltip"
+								 data-animation="false"
+								 data-original-title="{{ s.desc }}"
+								 id="{{ s.id }}"
+								 href="{{ s.url }}"
+								 target="_blank" >{{ s.name }}</a>
+							{% if not s.score == None %}
+							<small class="pull-right text-muted">{{ s.score|floatformat }}%</small>
+							{% endif %}
 							<script type="text/javascript">
 								$('#{{ s.id }}').tooltip();
 							</script>
-							<small class="text-left text-muted">{{ s.verb }}</small>
-							<small class="pull-right text-muted">{{ s.time }}</small>
 						</td>
 					<tr>
 				{% endfor %}
@@ -67,23 +69,22 @@
 				</script>
 				<table class="table table-condensed table-hover">
 				{% for s in exercises %}
-					{% if s.verb == "progressed" %}
-					<tr class="success">
-					{% elif s.verb == "completed" %}
-					<tr class="">
-					{% elif s.verb == "suspended" %}
+					{% if s.verb == "suspended" %}
 					<tr class="warning">
 					{% else %}
 					<tr class="">
 					{% endif %}
 						<td>
 							<a data-toggle="tooltip" data-animation="false" data-original-title="{{ s.desc }}"
-								id="{{ s.id }}" href="{{ s.url }}" >{{ s.name }}</a><br />
+								id="{{ s.id }}" href="{{ s.url }}" target="_blank" >{{ s.name }}</a><br />
 							<script type="text/javascript">
 								$('#{{ s.id }}').tooltip();
 							</script>
 							<small class="text-left text-muted">{{ s.verb }}</small>
 							<small class="pull-right text-muted">{{ s.time }}</small>
+							{% if s.progress %}
+							<div style="height: 3px; background-color: 22BB55; width: {{ s.progress }}%;">
+							{% endif %}
 						</td>
 					<tr>
 				{% endfor %}
@@ -98,23 +99,13 @@
 				</script>
 				<table class="table table-condensed table-hover">
 				{% for s in video %}
-					{% if s.verb == "progressed" %}
-					<tr class="success">
-					{% elif s.verb == "completed" %}
 					<tr class="">
-					{% elif s.verb == "suspended" %}
-					<tr class="warning">
-					{% else %}
-					<tr class="">
-					{% endif %}
 						<td>
 							<a data-toggle="tooltip" data-animation="false" data-original-title="{{ s.desc }}"
-								id="{{ s.id }}" href="{{ s.url }}" >{{ s.name }}</a><br />
+								id="{{ s.id }}" href="{{ s.url }}" target="_blank" >{{ s.name }}</a><br />
 							<script type="text/javascript">
 								$('#{{ s.id }}').tooltip();
 							</script>
-							<small class="text-left text-muted">{{ s.verb }}</small>
-							<small class="pull-right text-muted">{{ s.time }}</small>
 						</td>
 					<tr>
 				{% endfor %}

@@ -7,6 +7,7 @@ from recommendation import recommend
 from models import Recommendation
 from tincan_api import TinCan
 import json
+import re
 
 
 from pprint import pformat, pprint
@@ -18,8 +19,8 @@ PASSWORD = settings.TINCAN['password']
 ENDPOINT = settings.TINCAN['endpoint']
 
 
-"""
-def parse_statements(objects, view_all=False):
+""" Old, can be used for debugging by showing all statements
+def parse_statements(objects, view_all=True):
     r = []
     uris = set()
     for s in objects:
@@ -48,25 +49,54 @@ def parse_statements(objects, view_all=False):
 def parse_statements(objects):
     COMPLETED = TinCan.VERBS['completed']['id']
     ANSWERED = TinCan.VERBS['answered']['id']
+    QUESTION = TinCan.ACTIVITY_TYPES['question']
+    ASSESSMENT = TinCan.ACTIVITY_TYPES['assessment']
+    PROGRESS_T = "http://uva.nl/coach/progress"
+    pre_url = "https://www.google.com/accounts/ServiceLogin?service=ah" +\
+              "&passive=true&continue=https://appengine.google.com/_ah/" +\
+              "conflogin%3Fcontinue%3Dhttp://www.iktel.nl/postlogin%253F" +\
+              "continue%253D"
     r = {}
     for s in objects:
         try:
-            verb_t = s['object']['definition']['type']
+            type = s['object']['definition']['type']
+        except KeyError:
+            type = ''
+        if type == ASSESSMENT:
+            try:
+                raw = s['result']['score']['raw']
+                min = s['result']['score']['min']
+                max = s['result']['score']['max']
+                score = 100 * (raw - min) / max
+            except KeyError:
+                score = None
+        else:
+            score = None
+        try:
+            progress = float(s['result']['extensions'][PROGRESS_T]) * 100
+        except KeyError:
+            progress = None
+        try:
+            verb_t = s['verb']['id']
             d = s['object']['definition']
             name = d['name']['en-US']
             desc = d['description']['en-US']
             url = s['object']['id']
+            # HARDCODE LOGIN HACK FOR PERCEPTUM
+            if re.search('www.iktel.nl', url):
+                url = pre_url + url
             if not verb_t == ANSWERED and ((url not in r) or verb_t == COMPLETED):
                 r[url] = {'mbox': s['actor']['mbox'],
-                                    'url': url,
-                                    'name': name,
-                                    'desc': desc,
-                                    'id': s['id'],
-                                    'verb': s['verb']['display']['en-US'],
-                                    'time': s['timestamp'].split(' ')[0]}
+                          'score': score,
+                          'progress': progress,
+                          'url': url,
+                          'name': name,
+                          'desc': desc,
+                          'id': s['id'],
+                          'verb': s['verb']['display']['en-US'],
+                          'time': s['timestamp'].split(' ')[0]}
         except KeyError as e:
             print 'Error:', e
-    print r.values()
     return r.values()
 
 
@@ -102,8 +132,8 @@ def index(request):
     tincan = TinCan(USERNAME, PASSWORD, ENDPOINT)
     mbox = 'mailto:martin.latour@student.uva.nl'
     obj = {'agent': {'mbox': mbox}}
-    #tc_resp = tincan.getFilteredStatements(obj)
-    tc_resp = tincan.getAllStatements()
+    tc_resp = tincan.getFilteredStatements(obj)
+    #tc_resp = tincan.getAllStatements()
     statements = split_statements(tc_resp)
 
     assignments = parse_statements(statements['assignments'])
