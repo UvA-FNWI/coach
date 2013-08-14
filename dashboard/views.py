@@ -19,33 +19,6 @@ PASSWORD = settings.TINCAN['password']
 ENDPOINT = settings.TINCAN['endpoint']
 
 
-""" Old, can be used for debugging by showing all statements
-def parse_statements(objects, view_all=True):
-    r = []
-    uris = set()
-    for s in objects:
-        try:
-            d = s['object']['definition']
-            name = d['name']['en-US']
-            desc = d['description']['en-US']
-            url = s['object']['id']
-            if view_all or (url not in uris):
-                r.append({'mbox': s['actor']['mbox'],
-                          'url': url,
-                          'name': name,
-                          'desc': desc,
-                          'id': s['id'],
-                          'verb': s['verb']['display']['en-US'],
-                          'time': s['timestamp'].split(' ')[0]})
-                uris.add(url)
-            elif not view_all:
-                uris.add(url)
-        except KeyError as e:
-            print 'Error:', e
-    return r
-"""
-
-
 def parse_statements(objects):
     COMPLETED = TinCan.VERBS['completed']['id']
     ANSWERED = TinCan.VERBS['answered']['id']
