@@ -17,3 +17,15 @@ class Recommendation(models.Model):
     def __html__(self):
         return '<a href="' + str(self.url) + '" >' + \
                str(self.name) + '</a>'
+
+class Activity(models.Model):
+    user = models.EmailField()
+    type = models.URLField(max_length=255)
+    activity = models.URLField(max_length=255)
+    value = models.FloatField()  # Progress/score depending on type *
+    time = models.DateTimeField(auto_now=True)
+
+    def __unicode__(self):
+        return self.user + ' ' + self.activity + ' ' + str(self.value)
+
+# * Assignments have scores and questions have progress

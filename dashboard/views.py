@@ -4,7 +4,7 @@ from django.contrib.auth import authenticate, login
 from django.conf import settings
 from django.db import transaction
 from recommendation import recommend
-from models import Recommendation
+from models import Recommendation, Activity
 from tincan_api import TinCan
 import json
 import re
@@ -18,17 +18,18 @@ USERNAME = settings.TINCAN['username']
 PASSWORD = settings.TINCAN['password']
 ENDPOINT = settings.TINCAN['endpoint']
 
+COMPLETED = TinCan.VERBS['completed']['id']
+ANSWERED = TinCan.VERBS['answered']['id']
+QUESTION = TinCan.ACTIVITY_TYPES['question']
+ASSESSMENT = TinCan.ACTIVITY_TYPES['assessment']
+PROGRESS_T = "http://uva.nl/coach/progress"
+pre_url = "https://www.google.com/accounts/ServiceLogin?service=ah" +\
+          "&passive=true&continue=https://appengine.google.com/_ah/" +\
+          "conflogin%3Fcontinue%3Dhttp://www.iktel.nl/postlogin%253F" +\
+          "continue%253D"
+
 
 def parse_statements(objects):
-    COMPLETED = TinCan.VERBS['completed']['id']
-    ANSWERED = TinCan.VERBS['answered']['id']
-    QUESTION = TinCan.ACTIVITY_TYPES['question']
-    ASSESSMENT = TinCan.ACTIVITY_TYPES['assessment']
-    PROGRESS_T = "http://uva.nl/coach/progress"
-    pre_url = "https://www.google.com/accounts/ServiceLogin?service=ah" +\
-              "&passive=true&continue=https://appengine.google.com/_ah/" +\
-              "conflogin%3Fcontinue%3Dhttp://www.iktel.nl/postlogin%253F" +\
-              "continue%253D"
     r = {}
     for s in objects:
         try:
@@ -100,13 +101,44 @@ def getallen(request):
     return render(request, 'dashboard/getallen.html', {})
 
 
+@transaction.commit_manually
+def cache_activities(request):
+    tincan = TinCan(USERNAME, PASSWORD, ENDPOINT)
+    tc_resp = tincan.getAllStatements()
+    for resp in tc_resp:
+        type = resp['object']['definition']['type']
+        user = resp['actor']['mbox']
+        activity = resp['object']['id']
+        if type == ASSESSMENT:
+            try:
+                raw = resp['result']['score']['raw']
+                min = resp['result']['score']['min']
+                max = resp['result']['score']['max']
+                value = (raw - min) / max
+            except KeyError:
+                value = 0
+        else:
+            try:
+                value = resp['result']['extensions'][PROGRESS_T]
+            except KeyError:
+                value = 0
+        a = Activity(user=user,
+                     type=type,
+                     activity=activity,
+                     value=value)
+        a.save()
+    transaction.commit()
+    return HttpResponse()
+
+
 # dashboard
 def index(request):
     tincan = TinCan(USERNAME, PASSWORD, ENDPOINT)
+    # FIXME: Real login
     mbox = 'mailto:martin.latour@student.uva.nl'
     obj = {'agent': {'mbox': mbox}}
     tc_resp = tincan.getFilteredStatements(obj)
-    #tc_resp = tincan.getAllStatements()
+    #tc_resp = tincan.getAllStatements()  # debug
     statements = split_statements(tc_resp)
 
     assignments = parse_statements(statements['assignments'])
