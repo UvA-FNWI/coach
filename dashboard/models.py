@@ -24,6 +24,8 @@ class Activity(models.Model):
     activity = models.URLField(max_length=255)
     value = models.FloatField()  # Progress/score depending on type *
     time = models.DateTimeField(auto_now=True)
+    name = models.CharField(max_length=255)
+    description = models.CharField(max_length=255)
 
     def __unicode__(self):
         return self.user + ' ' + self.activity + ' ' + str(self.value)

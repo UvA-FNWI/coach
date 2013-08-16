@@ -12,5 +12,4 @@ urlpatterns = patterns('',
             name='generate recommendations'),
         url(r'^recommend$', views.get_recommendations,
             name='get recommendations'),
-        #url(r'^apriori/(?P<minsup>\d+(.\d+)?)/$', views.apriori, name='apriori'),
         )

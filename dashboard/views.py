@@ -8,6 +8,8 @@ from models import Recommendation, Activity
 from tincan_api import TinCan
 import json
 import re
+import random
+import string
 
 
 from pprint import pformat, pprint
@@ -29,7 +31,14 @@ pre_url = "https://www.google.com/accounts/ServiceLogin?service=ah" +\
           "continue%253D"
 
 
+def rand_id():
+    """Give random ID for html elements."""
+    return ''.join(random.choice(string.ascii_uppercase + string.digits)
+                   for x in range(10))
+
+
 def parse_statements(objects):
+    """Get data from statements necessary for displaying."""
     r = {}
     for s in objects:
         try:
@@ -61,13 +70,13 @@ def parse_statements(objects):
                 url = pre_url + url
             if not verb_t == ANSWERED and ((url not in r) or verb_t == COMPLETED):
                 r[url] = {'mbox': s['actor']['mbox'],
+                          'type': type,
                           'score': score,
                           'progress': progress,
                           'url': url,
                           'name': name,
                           'desc': desc,
-                          'id': s['id'],
-                          'verb': s['verb']['display']['en-US'],
+                          'id': rand_id(),
                           'time': s['timestamp'].split(' ')[0]}
         except KeyError as e:
             print 'Error:', e
@@ -75,6 +84,12 @@ def parse_statements(objects):
 
 
 def split_statements(statements):
+    """Split statements by type:
+        assignments
+        exercises
+        video
+        rest
+    """
     r = {}
     r['assignments'] = []
     r['exercises'] = []
@@ -82,7 +97,7 @@ def split_statements(statements):
     r['rest'] = []
     for s in statements:
         try:
-            type = s['object']['definition']['type']
+            type = s['type']
         except:
             continue
         if type == TinCan.ACTIVITY_TYPES['assessment']:
@@ -96,7 +111,7 @@ def split_statements(statements):
     return r
 
 
-# FIXME: This is just for testing
+# TODO: Remove. This is just for testing
 def getallen(request):
     return render(request, 'dashboard/getallen.html', {})
 
@@ -109,6 +124,9 @@ def cache_activities(request):
         type = resp['object']['definition']['type']
         user = resp['actor']['mbox']
         activity = resp['object']['id']
+        # FIXME make
+        name = resp['object']['definition']['name']['en-US']
+        description = resp['object']['definition']['description']['en-US']
         if type == ASSESSMENT:
             try:
                 raw = resp['result']['score']['raw']
@@ -124,6 +142,8 @@ def cache_activities(request):
                 value = 0
         a = Activity(user=user,
                      type=type,
+                     name=name,
+                     description=description,
                      activity=activity,
                      value=value)
         a.save()
@@ -139,11 +159,11 @@ def index(request):
     obj = {'agent': {'mbox': mbox}}
     tc_resp = tincan.getFilteredStatements(obj)
     #tc_resp = tincan.getAllStatements()  # debug
-    statements = split_statements(tc_resp)
+    statements = split_statements(parse_statements(tc_resp))
 
-    assignments = parse_statements(statements['assignments'])
-    exercises = parse_statements(statements['exercises'])
-    video = parse_statements(statements['video'])
+    assignments = statements['assignments']
+    exercises = statements['exercises']
+    video = statements['video']
 
     return render(request, 'dashboard/index.html',
                   {'assignments': assignments,
