@@ -124,7 +124,7 @@ class TinCan(object):
         ##Attempts to retrieve every TinCan Statement from the End point
         queryObject = {}
         for key in ['result', 'agent', 'context', 'timestamp',
-                                'verb', 'object',
+                                'verb', 'object', 'since',
                                 'stored', 'authority', 'version', 'attachments']:
             if key in inputDict:
                 queryObject[key] = inputDict[key]
