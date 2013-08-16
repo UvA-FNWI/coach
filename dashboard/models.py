@@ -1,4 +1,12 @@
 from django.db import models
+import random
+import string
+
+
+def rand_id():
+    """Generate a random ID for use in html DOM elements."""
+    return ''.join(random.choice(string.ascii_uppercase + string.digits)
+                   for x in range(10))
 
 
 class Recommendation(models.Model):
@@ -18,14 +26,26 @@ class Recommendation(models.Model):
         return '<a href="' + str(self.url) + '" >' + \
                str(self.name) + '</a>'
 
+
 class Activity(models.Model):
     user = models.EmailField()
     type = models.URLField(max_length=255)
+    verb = models.URLField(max_length=255)
     activity = models.URLField(max_length=255)
-    value = models.FloatField()  # Progress/score depending on type *
-    time = models.DateTimeField(auto_now=True)
+    value = models.FloatField(null=True)  # Progress/score depending on type *
     name = models.CharField(max_length=255)
     description = models.CharField(max_length=255)
+    time = models.DateTimeField(null=True)
+
+    def _dict(self):
+        return {'user': self.user,
+                'type': self.type,
+                'verb': self.verb,
+                'url': self.activity,
+                'value': self.value,
+                'name': self.name,
+                'desc': self.description,
+                'id': rand_id()}
 
     def __unicode__(self):
         return self.user + ' ' + self.activity + ' ' + str(self.value)

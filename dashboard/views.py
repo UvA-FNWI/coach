@@ -4,12 +4,11 @@ from django.contrib.auth import authenticate, login
 from django.conf import settings
 from django.db import transaction
 from recommendation import recommend
-from models import Recommendation, Activity
+from models import Activity, Recommendation, rand_id
 from tincan_api import TinCan
 import json
 import re
-import random
-import string
+import dateutil.parser
 
 
 from pprint import pformat, pprint
@@ -31,12 +30,6 @@ pre_url = "https://www.google.com/accounts/ServiceLogin?service=ah" +\
           "continue%253D"
 
 
-def rand_id():
-    """Give random ID for html elements."""
-    return ''.join(random.choice(string.ascii_uppercase + string.digits)
-                   for x in range(10))
-
-
 def parse_statements(objects):
     """Get data from statements necessary for displaying."""
     r = {}
@@ -45,39 +38,34 @@ def parse_statements(objects):
             type = s['object']['definition']['type']
         except KeyError:
             type = ''
-        if type == ASSESSMENT:
-            try:
-                raw = s['result']['score']['raw']
-                min = s['result']['score']['min']
-                max = s['result']['score']['max']
-                score = 100 * (raw - min) / max
-            except KeyError:
-                score = None
-        else:
-            score = None
-        try:
-            progress = float(s['result']['extensions'][PROGRESS_T]) * 100
+        try:        # Assessment    - score
+            raw = s['result']['score']['raw']
+            min = s['result']['score']['min']
+            max = s['result']['score']['max']
+            value = 100 * (raw - min) / max
         except KeyError:
-            progress = None
+            try:    # Question      - result
+                value = float(s['result']['extensions'][PROGRESS_T]) * 100
+            except KeyError:
+                value = None
         try:
             verb_t = s['verb']['id']
             d = s['object']['definition']
             name = d['name']['en-US']
             desc = d['description']['en-US']
             url = s['object']['id']
+            # TODO: make less ugly
             # HARDCODE LOGIN HACK FOR PERCEPTUM
             if re.search('www.iktel.nl', url):
                 url = pre_url + url
             if not verb_t == ANSWERED and ((url not in r) or verb_t == COMPLETED):
-                r[url] = {'mbox': s['actor']['mbox'],
+                r[url] = {'user': s['actor']['mbox'],
                           'type': type,
-                          'score': score,
-                          'progress': progress,
                           'url': url,
+                          'value': value,
                           'name': name,
                           'desc': desc,
-                          'id': rand_id(),
-                          'time': s['timestamp'].split(' ')[0]}
+                          'id': rand_id()}
         except KeyError as e:
             print 'Error:', e
     return r.values()
@@ -116,50 +104,75 @@ def getallen(request):
     return render(request, 'dashboard/getallen.html', {})
 
 
+
+
+# user+activity is unique, update
 @transaction.commit_manually
 def cache_activities(request):
+    # Find most recent date
+    try:
+        most_recent_time = Activity.objects.latest('time').time
+    except:
+        most_recent_time = None
+
+    # Get new data
     tincan = TinCan(USERNAME, PASSWORD, ENDPOINT)
-    tc_resp = tincan.getAllStatements()
+    if most_recent_time:
+        tc_resp = tincan.getFilteredStatements({'since': most_recent_time})
+    else:
+        tc_resp = tincan.getAllStatements()
+
     for resp in tc_resp:
         type = resp['object']['definition']['type']
         user = resp['actor']['mbox']
         activity = resp['object']['id']
-        # FIXME make
+        verb = resp['verb']['id']
         name = resp['object']['definition']['name']['en-US']
         description = resp['object']['definition']['description']['en-US']
+        time = dateutil.parser.parse(resp['timestamp'])
         if type == ASSESSMENT:
             try:
                 raw = resp['result']['score']['raw']
                 min = resp['result']['score']['min']
                 max = resp['result']['score']['max']
-                value = (raw - min) / max
+                value = 100 * (raw - min) / max
             except KeyError:
                 value = 0
         else:
             try:
-                value = resp['result']['extensions'][PROGRESS_T]
+                value = 100 * float(resp['result']['extensions'][PROGRESS_T])
             except KeyError:
                 value = 0
-        a = Activity(user=user,
-                     type=type,
-                     name=name,
-                     description=description,
-                     activity=activity,
-                     value=value)
-        a.save()
+        a, created = Activity.objects.get_or_create(user=user,
+                                                    activity=activity)
+        # Don't overwrite completed; only overwite with more recent timestamp
+        if created or (time > a.time and a.verb != COMPLETED):
+            a.verb = verb
+            a.type = type
+            a.value = value
+            a.name = name
+            a.description = description
+            a.time = time
+            a.save()
     transaction.commit()
     return HttpResponse()
 
 
 # dashboard
-def index(request):
-    tincan = TinCan(USERNAME, PASSWORD, ENDPOINT)
+def index(request, cached=True):
     # FIXME: Real login
     mbox = 'mailto:martin.latour@student.uva.nl'
-    obj = {'agent': {'mbox': mbox}}
-    tc_resp = tincan.getFilteredStatements(obj)
-    #tc_resp = tincan.getAllStatements()  # debug
-    statements = split_statements(parse_statements(tc_resp))
+
+    if cached:
+        statements = split_statements(map(lambda x: Activity._dict(x),
+                                          Activity.objects.filter(user=mbox)))
+    else:
+        tincan = TinCan(USERNAME, PASSWORD, ENDPOINT)
+        obj = {'agent': {'mbox': mbox}}
+        tc_resp = tincan.getFilteredStatements(obj)
+        #tc_resp = tincan.getAllStatements()  # debug
+        statements = split_statements(parse_statements(tc_resp))
+
 
     assignments = statements['assignments']
     exercises = statements['exercises']
