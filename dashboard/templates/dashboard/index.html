@@ -6,28 +6,25 @@
 	<script src="{% static 'dashboard/jquery-2.0.3.min.js' %}"></script>
 	<script src="{% static 'dashboard/bootstrap.min.js' %}"></script>
 
-  <div class="container" style="width: 250px; -webkit-box-shadow: -1px 2px 8px
+  <div class="container" style="width: 300px; -webkit-box-shadow: -1px 2px 8px
 		#BBB; -moz-box-shadow: -1px 2px 8px #BBB; box-shadow: -1px 2px 8px #BBB;
 		border-top-left-radius: 4px; border-top-right-radius: 4px;">
-		<div class="navbar" style="">
-			<div class="container">
-				<div class="nav-collapse collapse">
-					<ul id="main-nav" class="nav navbar-nav">
-						<li class="active">
-							<a data-toggle="tab" href="#assessments">Assessments</a>
-						</li>
-						<li>
-							<a data-toggle="tab" href="#exercises">Exercises</a>
-						</li>
-						<li>
-							<a data-toggle="tab" href="#video">Video</a>
-						</li>
-					</ul>
-				</div>
-			</div>
+		<ul id="main-nav" class="nav nav-tabs">
+			<li class="active">
+				<a data-toggle="tab" href="#assessments">Assessments</a>
+			</li>
+			<li>
+				<a data-toggle="tab" href="#exercises">Exercises</a>
+			</li>
+			<li>
+				<a data-toggle="tab" href="#video">Video</a>
+			</li>
+		</ul>
+		<div style="padding: 0; margin: 5px; border-color: #EEEEEE; border-style:
+			solid; border-width: 1px;">
+			<object data="barcode" type="image/svg+xml" 
+				style="width: 100%; height: 13px;"></object>
 		</div>
-		<object data="barcode" type="image/svg+xml" 
-			style="width: 100%; height: 15px;"></object>
 
 		<div id="main-tab" class="tab-content">
 			<div class="tab-pane active" id="assessments">
