@@ -104,7 +104,7 @@ def getallen(request):
     return render(request, 'dashboard/getallen.html', {})
 
 
-def barcode(request, width=100):
+def barcode(request, width=170):
     """Return an svg representing progress of an individual vs the group."""
 
     # FIXME real login
