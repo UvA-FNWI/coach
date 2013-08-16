@@ -110,13 +110,18 @@ def getallen(request):
 @transaction.commit_manually
 def cache_activities(request):
     # Find most recent date
-    most_recent_time = Activity.objects.latest('time').time
-    print '--> latest', most_recent_time
+    try:
+        most_recent_time = Activity.objects.latest('time').time
+    except:
+        most_recent_time = None
 
     # Get new data
     tincan = TinCan(USERNAME, PASSWORD, ENDPOINT)
-    tc_resp = tincan.getFilteredStatements({'since': most_recent_time})
-    print '--> number of returned items:', len(tc_resp)
+    if most_recent_time:
+        tc_resp = tincan.getFilteredStatements({'since': most_recent_time})
+    else:
+        tc_resp = tincan.getAllStatements()
+
     for resp in tc_resp:
         type = resp['object']['definition']['type']
         user = resp['actor']['mbox']
@@ -125,7 +130,6 @@ def cache_activities(request):
         name = resp['object']['definition']['name']['en-US']
         description = resp['object']['definition']['description']['en-US']
         time = dateutil.parser.parse(resp['timestamp'])
-        print '--> returned', time
         if type == ASSESSMENT:
             try:
                 raw = resp['result']['score']['raw']
@@ -136,7 +140,7 @@ def cache_activities(request):
                 value = 0
         else:
             try:
-                value = resp['result']['extensions'][PROGRESS_T]
+                value = 100 * float(resp['result']['extensions'][PROGRESS_T])
             except KeyError:
                 value = 0
         a, created = Activity.objects.get_or_create(user=user,
