@@ -8,8 +8,7 @@ from models import Activity, Recommendation, rand_id
 from tincan_api import TinCan
 import json
 import re
-import random
-import string
+import dateutil.parser
 
 
 from pprint import pformat, pprint
@@ -105,6 +104,9 @@ def getallen(request):
     return render(request, 'dashboard/getallen.html', {})
 
 
+
+
+# user+activity is unique, update
 @transaction.commit_manually
 def cache_activities(request):
     tincan = TinCan(USERNAME, PASSWORD, ENDPOINT)
@@ -113,15 +115,16 @@ def cache_activities(request):
         type = resp['object']['definition']['type']
         user = resp['actor']['mbox']
         activity = resp['object']['id']
-        # FIXME make
+        verb = resp['verb']['id']
         name = resp['object']['definition']['name']['en-US']
         description = resp['object']['definition']['description']['en-US']
+        time = dateutil.parser.parse(resp['timestamp'])
         if type == ASSESSMENT:
             try:
                 raw = resp['result']['score']['raw']
                 min = resp['result']['score']['min']
                 max = resp['result']['score']['max']
-                value = (raw - min) / max
+                value = 100 * (raw - min) / max
             except KeyError:
                 value = 0
         else:
@@ -129,13 +132,17 @@ def cache_activities(request):
                 value = resp['result']['extensions'][PROGRESS_T]
             except KeyError:
                 value = 0
-        a = Activity(user=user,
-                     type=type,
-                     name=name,
-                     description=description,
-                     activity=activity,
-                     value=value)
-        a.save()
+        a, created = Activity.objects.get_or_create(user=user,
+                                                    activity=activity)
+        # Don't overwrite completed, only overwite with more recent timestamp
+        if created or (time > a.time and a.verb != COMPLETED):
+            a.verb = verb
+            a.type = type
+            a.value = value
+            a.name = name
+            a.description = description
+            a.time = time
+            a.save()
     transaction.commit()
     return HttpResponse()
 

@@ -30,15 +30,17 @@ class Recommendation(models.Model):
 class Activity(models.Model):
     user = models.EmailField()
     type = models.URLField(max_length=255)
+    verb = models.URLField(max_length=255)
     activity = models.URLField(max_length=255)
-    value = models.FloatField()  # Progress/score depending on type *
+    value = models.FloatField(null=True)  # Progress/score depending on type *
     name = models.CharField(max_length=255)
     description = models.CharField(max_length=255)
-    time = models.DateTimeField(auto_now=True)
+    time = models.DateTimeField(null=True)
 
     def _dict(self):
         return {'user': self.user,
                 'type': self.type,
+                'verb': self.verb,
                 'url': self.activity,
                 'value': self.value,
                 'name': self.name,
