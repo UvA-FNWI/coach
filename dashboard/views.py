@@ -104,11 +104,45 @@ def getallen(request):
     return render(request, 'dashboard/getallen.html', {})
 
 
+def barcode(request, width=100):
+    """Return an svg representing progress of an individual vs the group."""
+
+    # FIXME real login
+    mbox = 'mailto:martin.latour@student.uva.nl'
+
+    all = Activity.objects
+    data = {'width': width}
+
+    # Add values
+    people = {}
+    activities = all.filter(type=TinCan.ACTIVITY_TYPES['assessment'])
+    for activity in activities:
+        if activity.user in people:
+            people[activity.user] += min(80, activity.value)
+        else:
+            people[activity.user] = min(80, activity.value)
+    data['user'] = people[mbox]
+    data['people'] = people.values()
+
+    # Normalise
+    maximum = max(people.values())
+    data['user'] /= maximum
+    data['user'] *= width
+    data['user'] = int(data['user'])
+    for i, person in enumerate(data['people']):
+        data['people'][i] /= maximum
+        data['people'][i] *= width
+        data['people'][i] = int(data['people'][i])
+
+    return render(request, 'dashboard/barcode.svg', data)
 
 
 # user+activity is unique, update
 @transaction.commit_manually
 def cache_activities(request):
+    """Create a cache of the Learning Record Store by getting all items since
+    the most recent one in the cache.
+    """
     # Find most recent date
     try:
         most_recent_time = Activity.objects.latest('time').time
