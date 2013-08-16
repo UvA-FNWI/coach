@@ -160,8 +160,8 @@ def cache_activities(request):
 
 # dashboard
 def index(request, cached=True):
-    # FIXME: Real login
-    mbox = 'mailto:martin.latour@student.uva.nl'
+    email = request.GET.get('email','m.cohen@sowiso.nl');
+    mbox = 'mailto:%s' % (email,)
 
     if cached:
         statements = split_statements(map(lambda x: Activity._dict(x),
