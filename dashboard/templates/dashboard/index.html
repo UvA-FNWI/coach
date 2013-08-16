@@ -37,7 +37,7 @@
 				</script>
 				<table class="table table-condensed table-hover">
 				{% for s in assignments %}
-					{% if s.score >= 80 %}
+					{% if s.value >= 80 %}
 					<tr class="success">
 					{% else %}
 					<tr class="">
@@ -49,8 +49,8 @@
 								 id="{{ s.id }}"
 								 href="{{ s.url }}"
 								 target="_blank" >{{ s.name }}</a>
-							{% if not s.score == None %}
-							<small class="pull-right text-muted">{{ s.score|floatformat }}%</small>
+							{% if not s.value == None %}
+							<small class="pull-right text-muted">{{ s.value|floatformat }}%</small>
 							{% endif %}
 							<script type="text/javascript">
 								$('#{{ s.id }}').tooltip();
@@ -80,10 +80,8 @@
 							<script type="text/javascript">
 								$('#{{ s.id }}').tooltip();
 							</script>
-							<small class="text-left text-muted">{{ s.verb }}</small>
-							<small class="pull-right text-muted">{{ s.time }}</small>
-							{% if s.progress %}
-							<div style="height: 3px; background-color: 22BB55; width: {{ s.progress }}%;">
+							{% if s.value %}
+							<div style="height: 3px; background-color: 22BB55; width: {{ s.value }}%;">
 							{% endif %}
 						</td>
 					<tr>
