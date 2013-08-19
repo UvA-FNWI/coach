@@ -107,8 +107,8 @@ def getallen(request):
 def barcode(request, width=170):
     """Return an svg representing progress of an individual vs the group."""
 
-    # FIXME real login
-    mbox = 'mailto:martin.latour@student.uva.nl'
+    email = request.GET.get('email','m.cohen@sowiso.nl');
+    mbox = 'mailto:%s' % (email,)
 
     all = Activity.objects
     data = {'width': width}
@@ -213,7 +213,8 @@ def index(request, cached=True):
     video = statements['video']
 
     return render(request, 'dashboard/index.html',
-                  {'assignments': assignments,
+                  {'email':email,
+                   'assignments': assignments,
                    'exercises': exercises,
                    'video': video})
 
