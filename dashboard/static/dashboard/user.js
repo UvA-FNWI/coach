@@ -49,7 +49,7 @@ var User = {
 			{
 				client_id: clientId,
 				scope: User.scopes,
-				immediate: true
+				immediate: true,
 			},
 			User.handle_login
 		);
@@ -62,7 +62,8 @@ var User = {
 				{
 					client_id: clientId, 
 					scope: User.scopes, 
-					immediate: false
+					immediate: false,
+					hd: "student.uva.nl"
 				},
 				User.handle_login
 			);
