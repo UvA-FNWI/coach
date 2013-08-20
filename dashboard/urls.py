@@ -11,6 +11,6 @@ urlpatterns = patterns('',
         url(r'^barcode$', views.barcode, name='barcode'),
         url(r'^recommendations$', views.generate_recommendations,
             name='generate recommendations'),
-        url(r'^recommend$', views.get_recommendations,
+        url(r'^recommend/(?P<milestones>.+)$', views.get_recommendations,
             name='get recommendations'),
         )

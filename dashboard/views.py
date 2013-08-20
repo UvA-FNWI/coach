@@ -10,8 +10,9 @@ import json
 import re
 import dateutil.parser
 
-
 from pprint import pformat, pprint
+
+DEBUG_USER = {'email': 'm.cohen@sowiso.nl'}
 
 
 # Create tincan object
@@ -55,10 +56,6 @@ def parse_statements(objects):
             name = d['name']['en-US']
             desc = d['description']['en-US']
             url = s['object']['id']
-            # TODO: make less ugly
-            # HARDCODE LOGIN HACK FOR PERCEPTUM
-            if re.search('www.iktel.nl', url):
-                url = pre_url + url
             if not verb_t == ANSWERED and ((url not in r) or verb_t == COMPLETED):
                 r[url] = {'user': s['actor']['mbox'],
                           'type': type,
@@ -108,7 +105,7 @@ def getallen(request):
 def barcode(request, width=170):
     """Return an svg representing progress of an individual vs the group."""
 
-    email = request.GET.get('email','m.cohen@sowiso.nl');
+    email = request.GET.get('email', DEBUG_USER['email']);
     mbox = 'mailto:%s' % (email,)
 
     all = Activity.objects
@@ -195,19 +192,23 @@ def cache_activities(request):
 
 # dashboard
 def index(request, cached=True):
-    email = request.GET.get('email','m.cohen@sowiso.nl');
-    mbox = 'mailto:%s' % (email,)
+    email = request.GET.get('email', DEBUG_USER['email']);
 
     if cached:
-        statements = split_statements(map(lambda x: Activity._dict(x),
-                                          Activity.objects.filter(user=mbox)))
+        statements = map(lambda x: Activity._dict(x),
+                         Activity.objects.filter(user=mbox))
     else:
         tincan = TinCan(USERNAME, PASSWORD, ENDPOINT)
-        obj = {'agent': {'mbox': mbox}}
+        obj = {'agent': {'mbox': 'mailto:%s' % email}}
         tc_resp = tincan.getFilteredStatements(obj)
         #tc_resp = tincan.getAllStatements()  # debug
-        statements = split_statements(parse_statements(tc_resp))
+        statements = parse_statements(tc_resp)
 
+    for statement in statements:
+        if re.search('www.iktel.nl', statement.activity):
+            statement.activity = pre_url + statement.activity
+
+    statements = split_statements(statements)
 
     assignments = statements['assignments']
     exercises = statements['exercises']
@@ -222,38 +223,51 @@ def index(request, cached=True):
 
 
 # Recommendations
-def get_recommendations(request):
-    item_hash = hash(sort(request.POST))
-    Recommendation.objects.get(item_hash=item_hash)
-    # FIXME do something
+def get_recommendations(request, milestones):
+    rec_objs = Recommendation.objects
+    recs = []
+
+    for milestone in milestones.split(','):
+        tmp = rec_objs.filter(milestone=milestone)
+        for rec in tmp:
+            recs.append({'milestone': rec.milestone,
+                         'url': rec.url,
+                         'id': rand_id(),
+                         'name': rec.get_name(),
+                         'desc': rec.get_desc(),
+                         'm_name': rec.get_m_name(),
+                         'confidence': rec.confidence,
+                         'support': rec.support})
+    return render(request, 'dashboard/recommend.html',
+                  {'recommendations': recs})
 
 
 @transaction.commit_manually
 def generate_recommendations(request):
-    r_list, r_dict = recommend(minsup=4, minconf=.5)
-
+    recommendations, names = recommend(recommendationfunction='trail',
+                                       minsup=2, minconf=.5, gamma=.3)
     # Add recommendations to database
     Recommendation.objects.all().delete()
     i = 0
-    for r in r_list:
+    for r in recommendations:
         item_hash = hash(r['antecedent'])
         confidence = r['confidence']
         support = r['support']
         milestone = r['milestone']
         # Store each recommendation separately
-        for url in r['consequent']:
-            name = r_dict[url][0]
-            description = r_dict[url][1]
-            i += 1
-            print 'adding rule:', i
-            rec = Recommendation(item_hash=item_hash,
-                                 confidence=confidence,
-                                 support=support,
-                                 milestone=milestone,
-                                 name=name,
-                                 url=url,
-                                 description=description)
-            rec.save()
+        url = r['consequent']
+        name = names[url][0]
+        description = names[url][1]
+        i += 1
+        rec = Recommendation(item_hash=item_hash,
+                             confidence=confidence,
+                             support=support,
+                             milestone=milestone,
+                             m_name=names[milestone],
+                             name=name,
+                             url=url,
+                             description=description)
+        rec.save()
 
     transaction.commit()
-    return HttpResponse(pformat(r_list))
+    return HttpResponse(pformat(recommendations))

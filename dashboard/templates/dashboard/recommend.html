@@ -1,0 +1,39 @@
+{% load staticfiles %}
+{% block content %}
+<div id="coach" >
+	<link href="{% static 'dashboard/bootstrap.min.css' %}" rel="stylesheet" media="screen">
+	<link href="{% static 'dashboard/navbar.css' %}" rel="stylesheet" media="screen">
+	<script src="{% static 'dashboard/jquery-2.0.3.min.js' %}"></script>
+	<script src="{% static 'dashboard/bootstrap.min.js' %}"></script>
+
+  <div class="container" style="width: 300px; -webkit-box-shadow: -1px 2px 8px
+		#BBB; -moz-box-shadow: -1px 2px 8px #BBB; box-shadow: -1px 2px 8px #BBB;
+		border-top-left-radius: 4px; border-top-right-radius: 4px;">
+
+		<div class="container">
+			<table class="table table-condensed table-hover">
+			{% for r in recommendations %}
+				<tr>
+					<td>
+						<a data-toggle="tooltip"
+							 data-animation="false"
+							 data-original-title="{{ r.desc }}"
+							 id="{{ r.id }}"
+							 href="{{ r.url }}"
+							 target="_blank" >{{ r.name }}</a><br />
+						<small class="text-muted">Recommonded for: <a href="{{ m.milestone }}">
+							{{ r.m_name }}</a></small>
+						<small class="pull-right text-muted">c: {{ r.confidence|floatformat }},
+							s: {{ r.support|floatformat }}</small>
+						<script type="text/javascript">
+							$('#{{ s.id }}').tooltip();
+						</script>
+					</td>
+				<tr>
+			{% endfor %}
+			</table>
+		</div>
+  </div>
+</div>
+{% endblock %}
+{# vim: set ft=htmldjango ts=2 sw=2 softtabstop=2: #}
