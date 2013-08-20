@@ -29,7 +29,7 @@ pre_url = "https://www.google.com/accounts/ServiceLogin?service=ah" +\
           "conflogin%3Fcontinue%3Dhttp://www.iktel.nl/postlogin%253F" +\
           "continue%253D"
 
-BARCODE_HEIGHT = 20
+BARCODE_HEIGHT = 30
 
 def parse_statements(objects):
     """Get data from statements necessary for displaying."""
