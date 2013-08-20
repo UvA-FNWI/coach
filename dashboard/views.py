@@ -29,6 +29,7 @@ pre_url = "https://www.google.com/accounts/ServiceLogin?service=ah" +\
           "conflogin%3Fcontinue%3Dhttp://www.iktel.nl/postlogin%253F" +\
           "continue%253D"
 
+BARCODE_HEIGHT = 30
 
 def parse_statements(objects):
     """Get data from statements necessary for displaying."""
@@ -111,7 +112,7 @@ def barcode(request, width=170):
     mbox = 'mailto:%s' % (email,)
 
     all = Activity.objects
-    data = {'width': width}
+    data = {'width': width, 'height':BARCODE_HEIGHT}
 
     # Add values
     people = {}
@@ -213,7 +214,8 @@ def index(request, cached=True):
     video = statements['video']
 
     return render(request, 'dashboard/index.html',
-                  {'email':email,
+                  {'barcode_height': BARCODE_HEIGHT,
+                   'email':email,
                    'assignments': assignments,
                    'exercises': exercises,
                    'video': video})
