@@ -2,12 +2,12 @@
 <body style="padding: 0; margin: 0" >
 	<svg style="" width="100%" height="{{height}}px" id="progress"
 xmlns="http://www.w3.org/2000/svg" style='background: #ffffff'
-viewBox="0 0 {{ width }} 10" version="1.1">
+viewBox="0 0 {{ width }} {{height}}" version="1.1">
 {% for p in people %}
-<line x1="{{ p }}" y1="0" x2="{{ p }}" y2="10"
+<line x1="{{ p }}" y1="0" x2="{{ p }}" y2="{{height}}"
 	style="stroke:rgb(0,0,0);stroke-width:1.000000;stroke-opacity:0.100000" />
 {% endfor%}
-<line x1="{{ user }}" y1="0" x2="{{ user }}" y2="10"
+<line x1="{{ user }}" y1="0" x2="{{ user }}" y2="{{height}}"
 	style="stroke:rgb(255,0,0);stroke-width:1.000000;stroke-opacity:1" />
 	</svg>
 </body>
