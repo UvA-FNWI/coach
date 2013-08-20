@@ -1,6 +1,7 @@
 from django.db import models
 import random
 import string
+import ast
 
 
 def rand_id():
@@ -14,10 +15,24 @@ class Recommendation(models.Model):
     milestone = models.URLField()
     url = models.URLField()
     name = models.CharField(max_length=255)
+    m_name = models.CharField(max_length=255)
     description = models.CharField(max_length=255)
     confidence = models.FloatField()
     support = models.IntegerField()
     timestamp = models.DateTimeField(auto_now=True)
+
+
+    def get_name(self):
+        return ast.literal_eval(self.name).values()[0]
+
+    def get_desc(self):
+        return ast.literal_eval(self.description).values()[0]
+
+    def get_m_name(self):
+        return ast.literal_eval(self.m_name)[0].values()[0]
+
+    def get_m_desc(self):
+        return ast.literal_eval(self.m_name)[1].values()[0]
 
     def __unicode__(self):
         return self.name
