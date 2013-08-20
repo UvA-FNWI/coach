@@ -123,10 +123,11 @@ def barcode(request, width=170):
         else:
             people[activity.user] = min(80, activity.value)
     data['user'] = people[mbox]
+    del people[mbox]
     data['people'] = people.values()
 
     # Normalise
-    maximum = max(people.values())
+    maximum = max(max(people.values()),data['user'])
     data['user'] /= maximum
     data['user'] *= width
     data['user'] = int(data['user'])
