@@ -228,6 +228,9 @@ def index(request, cached=True):
     return response
 
 
+def bootstrap(request):
+    return render(request, 'dashboard/bootstrap.html')
+
 # Recommendations
 def get_recommendations(request, milestones):
     rec_objs = Recommendation.objects
