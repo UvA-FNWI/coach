@@ -3,6 +3,7 @@ from django.shortcuts import render, get_object_or_404
 from django.contrib.auth import authenticate, login
 from django.conf import settings
 from django.db import transaction
+from django.template import RequestContext, loader
 from recommendation import recommend
 from models import Activity, Recommendation, rand_id
 from tincan_api import TinCan
@@ -194,7 +195,6 @@ def cache_activities(request):
 # dashboard
 def index(request, cached=True):
     email = request.GET.get('email', DEBUG_USER['email']);
-
     if cached:
         statements = map(lambda x: Activity._dict(x),
                 Activity.objects.filter(user="mailto:%s"%(email,)))
@@ -215,12 +215,17 @@ def index(request, cached=True):
     exercises = statements['exercises']
     video = statements['video']
 
-    return render(request, 'dashboard/index.html',
-                  {'barcode_height': BARCODE_HEIGHT,
-                   'email':email,
-                   'assignments': assignments,
-                   'exercises': exercises,
-                   'video': video})
+    template = loader.get_template('dashboard/index.html')
+    context = RequestContext(request, {
+        'barcode_height': BARCODE_HEIGHT,
+        'email':email,
+        'assignments': assignments,
+        'exercises': exercises,
+        'video': video
+    })
+    response = HttpResponse(template.render(context))
+    response['Access-Control-Allow-Origin'] = "*"
+    return response
 
 
 # Recommendations
