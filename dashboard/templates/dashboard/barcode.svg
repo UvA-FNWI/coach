@@ -7,8 +7,13 @@
 			<line x1="{{ p }}" y1="3" x2="{{ p }}" y2="{{height|add:"-3"}}"
 				style="stroke:rgb(0,0,0);stroke-width:1.000000;stroke-opacity:0.100000" />
 		{% endfor%}
-			<rect x="{{ user|add:"-2" }}" width="4" ="{{ user }}" height="{{height}}"
-				style="stroke:rgb(255,0,0);fill:none;stroke-width:1.000000;stroke-opacity:1" />
+			<polygon points="{{user|add:"-2"}},2 {{user|add:"2"}},2 {{user}},0" 
+				style="fill:red;stroke:red;stroke-width:1" />
+			<line x1="{{ user }}" y1="0" x2="{{ user }}" y2="{{height}}"
+				style="stroke:rgb(255,0,0);stroke-width:2.000000;stroke-opacity:1" />
+				<polygon points="{{user|add:"-2"}},{{height|add:"-2"}}
+					{{user|add:"2"}},{{height|add:"-2"}} {{user}},{{height}}" 
+				style="fill:red;stroke:red;stroke-width:1" />
 </svg>
 </body>
 </html>
