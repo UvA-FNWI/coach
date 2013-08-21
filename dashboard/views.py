@@ -197,7 +197,7 @@ def index(request, cached=True):
 
     if cached:
         statements = map(lambda x: Activity._dict(x),
-                         Activity.objects.filter(user=mbox))
+                Activity.objects.filter(user="mailto:%s"%(email,)))
     else:
         tincan = TinCan(USERNAME, PASSWORD, ENDPOINT)
         obj = {'agent': {'mbox': 'mailto:%s' % email}}
@@ -206,8 +206,8 @@ def index(request, cached=True):
         statements = parse_statements(tc_resp)
 
     for statement in statements:
-        if re.search('www.iktel.nl', statement.activity):
-            statement.activity = pre_url + statement.activity
+        if re.search('www.iktel.nl', statement['url']):
+            statement['url'] = pre_url + statement['url']
 
     statements = split_statements(statements)
 
