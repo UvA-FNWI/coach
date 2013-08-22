@@ -14,24 +14,30 @@ def score(D, gamma = 0.9):
     NOTE: This method assumes that the items within the transactions are sorted.
     '''
 
-    score_dict = dict()
+    score_dict = dict() # Keeps track of the discounted counts
+    multi_dict = dict() # Keeps track of maximal discounted sum (in case of multiple occurence)
 
     def update(trail, cons):
+        '''Updates the scores and counts for the given consequent according to
+        the given (partial) trail.
+        '''
+        count_dict = defaultdict(int)
+
         if cons not in score_dict:
-            score_dict[cons] = dict()
+            score_dict[cons] = defaultdict(float)
+            multi_dict[cons] = defaultdict(float)
 
         for i, item in enumerate(trail):
-            if item not in score_dict[cons]:
-                score_dict[cons][item] = gamma ** i
-            else:
-                score_dict[cons][item] += gamma ** i
+            score_dict[cons][item] += gamma ** i
+            multi_dict[cons][item] += gamma ** count_dict[item]
+            count_dict[item] += 1
 
     for trail in D.itervalues():
         trail_list = list(reversed(trail))
         for i, item in enumerate(trail_list):
             update(trail_list[i+1:], item)
 
-    return score_dict
+    return score_dict, multi_dict
 
 def generate_rules(D, gamma, minsupp, minconf, verbose = False):
     '''Generates rules according to the scores of the items.
@@ -40,27 +46,15 @@ def generate_rules(D, gamma, minsupp, minconf, verbose = False):
     gamma:      Discount factor.
     minsupp:    Support threshold.
     minconf:    Confidence threshold.
-    verbose:    Prints the score-dict for debug purposes.
     '''
-    score_dict = score(D, gamma)
-
-    if verbose:
-        display_dict('scores', score_dict)
-
-    total_dict = dict()
-    for v in D.itervalues():
-        for item in v:
-            if item not in total_dict:
-                total_dict[item] = 1
-            else:
-                total_dict[item] += 1
+    score_dict, multi_dict = score(D, gamma)
 
     rules = set()
 
     for cons in score_dict:
         for ante in score_dict[cons]:
             supp = float(score_dict[cons][ante])
-            conf = supp / float(total_dict[cons])
+            conf = supp / float(multi_dict[cons][ante])
         
             if supp >= minsupp and conf >= minconf:
                 rules.add((ante, cons, conf, supp))
@@ -68,20 +62,14 @@ def generate_rules(D, gamma, minsupp, minconf, verbose = False):
     return rules
 
 if __name__ == '__main__':
-
     # Test Data
-    D = {100: (1,3,4),
-         200: (2,3,5),
+    D = {100: (1,1,4,5,4),
+         200: (1,2,4),
          300: (1,2,3,5),
          400: (2,5),
-         500: (1,2,4,5,3),
+         500: (1,2,2,2,4,5,3),
          600: (1,3,2,4,5),
          700: (1,2,5,4)}
-
-    L = {0: defaultdict(int)}
-    for v in D.itervalues():
-        for elem in v:
-            L[0][(elem,)] += 1
 
     gamma = float(sys.argv[1])
     minsupp = float(sys.argv[2])
