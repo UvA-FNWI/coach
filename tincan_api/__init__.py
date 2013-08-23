@@ -128,20 +128,21 @@ class TinCan(object):
                                 'stored', 'authority', 'version', 'attachments']:
             if key in inputDict:
                 queryObject[key] = inputDict[key]
-        self._endpoint = self._endpoint +"?"+ urllib.urlencode(queryObject)
+
+        endpoint = self._endpoint
+        url = endpoint +"?"+ urllib.urlencode(queryObject)
         try:
-            endpoint = self._endpoint
             statements = []
             while endpoint is not None:
                 try:
                     if (len(endpoint)> 2048):
-                        resp = requests.post(self._endpoint,
+                        resp = requests.post(endpoint,
                                              data = queryObject,
                                              auth = HTTPBasicAuth(self._userName,self._secret),
                                              headers = {"Content-Type":"application/json",
                                                                  self.VERSIONHEADER:self.VERSION})
                     else:
-                        resp = requests.get(endpoint,
+                        resp = requests.get(url,
                                             auth = HTTPBasicAuth(self._userName,self._secret),
                                             headers = {"Content-Type":"application/json",
                                                              self.VERSIONHEADER:self.VERSION})
