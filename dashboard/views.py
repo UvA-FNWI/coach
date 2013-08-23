@@ -33,6 +33,7 @@ pre_url = "https://www.google.com/accounts/ServiceLogin?service=ah" +\
 
 BARCODE_HEIGHT = 30
 
+
 def parse_statements(objects):
     """Get data from statements necessary for displaying."""
     r = {}
@@ -57,7 +58,8 @@ def parse_statements(objects):
             name = d['name']['en-US']
             desc = d['description']['en-US']
             url = s['object']['id']
-            if not verb_t == ANSWERED and ((url not in r) or verb_t == COMPLETED):
+            if not verb_t == ANSWERED and ((url not in r) or
+                                           verb_t == COMPLETED):
                 r[url] = {'user': s['actor']['mbox'],
                           'type': type,
                           'url': url,
@@ -77,25 +79,25 @@ def split_statements(statements):
         video
         rest
     """
-    r = {}
-    r['assignments'] = []
-    r['exercises'] = []
-    r['video'] = []
-    r['rest'] = []
-    for s in statements:
+    result = {}
+    result['assignments'] = []
+    result['exercises'] = []
+    result['video'] = []
+    result['rest'] = []
+    for statement in statements:
         try:
-            type = s['type']
-        except:
+            type = statement['type']
+        except KeyError:
             continue
         if type == TinCan.ACTIVITY_TYPES['assessment']:
-            r['assignments'].append(s)
+            result['assignments'].append(statement)
         elif type == TinCan.ACTIVITY_TYPES['question']:
-            r['exercises'].append(s)
+            result['exercises'].append(statement)
         elif type == TinCan.ACTIVITY_TYPES['media']:
-            r['video'].append(s)
+            result['video'].append(statement)
         else:
-            r['rest'].append(s)
-    return r
+            result['rest'].append(statement)
+    return result
 
 
 # TODO: Remove. This is just for testing
@@ -106,11 +108,11 @@ def getallen(request):
 def barcode(request, width=170):
     """Return an svg representing progress of an individual vs the group."""
 
-    email = request.GET.get('email', DEBUG_USER['email']);
+    email = request.GET.get('email', DEBUG_USER['email'])
     mbox = 'mailto:%s' % (email,)
 
     all = Activity.objects
-    data = {'width': width, 'height':BARCODE_HEIGHT}
+    data = {'width': width, 'height': BARCODE_HEIGHT}
 
     # Add values
     people = {}
@@ -125,7 +127,7 @@ def barcode(request, width=170):
     data['people'] = people.values()
 
     # Normalise
-    maximum = max(max(people.values()),data['user'])
+    maximum = max(max(people.values()), data['user'])
     data['user'] /= maximum
     data['user'] *= width
     data['user'] = int(data['user'])
@@ -194,10 +196,12 @@ def cache_activities(request):
 
 # dashboard
 def index(request, cached=True):
-    email = request.GET.get('email', DEBUG_USER['email']);
+    email = request.GET.get('email', DEBUG_USER['email'])
+    activities = Activity.objects
     if cached:
         statements = map(lambda x: Activity._dict(x),
-                Activity.objects.filter(user="mailto:%s"%(email,)).order_by('-time'))
+                         activities.filter(
+                             user="mailto:%s" % (email,)).order_by('-time'))
     else:
         tincan = TinCan(USERNAME, PASSWORD, ENDPOINT)
         obj = {'agent': {'mbox': 'mailto:%s' % email}}
@@ -218,7 +222,7 @@ def index(request, cached=True):
     template = loader.get_template('dashboard/index.html')
     context = RequestContext(request, {
         'barcode_height': BARCODE_HEIGHT,
-        'email':email,
+        'email': email,
         'assignments': assignments,
         'exercises': exercises,
         'video': video
@@ -231,22 +235,48 @@ def index(request, cached=True):
 def bootstrap(request):
     return render(request, 'dashboard/bootstrap.html')
 
+
+def f_score(confidence, support, beta=1):
+    return (1 + beta ** 2) * ((confidence * support) /
+                              (beta ** 2 * confidence + support))
+
+
 # Recommendations
-def get_recommendations(request, milestones):
+def get_recommendations(request, milestones, max_recs=False):
     rec_objs = Recommendation.objects
     recs = []
+
+    # Exclude completed items from recommendations
+    email = request.GET.get('email', DEBUG_USER['email'])
+    ex_objs = Activity.objects.filter(user='mailto:%s' % (email,))
+    ex_objs = seen_objs.exclude(verb=COMPLETED)
+    ex = set(map(lambda x: x.activity, seen_objs))
 
     for milestone in milestones.split(','):
         tmp = rec_objs.filter(milestone=milestone)
         for rec in tmp:
-            recs.append({'milestone': rec.milestone,
-                         'url': rec.url,
-                         'id': rand_id(),
-                         'name': rec.get_name(),
-                         'desc': rec.get_desc(),
-                         'm_name': rec.get_m_name(),
-                         'confidence': rec.confidence,
-                         'support': rec.support})
+            if rec.url not in ex:
+                score = f_score(rec.confidence, rec.support, beta=1.5)
+                recs.append({'milestone': rec.milestone,
+                             'url': rec.url,
+                             'id': rand_id(),
+                             'name': rec.get_name(),
+                             'desc': rec.get_desc(),
+                             'm_name': rec.get_m_name(),
+                             'confidence': rec.confidence,
+                             'support': rec.support,
+                             'score': score})
+
+    # Normalise support
+    max_sup = max(map(lambda x: x['score'], recs))
+    for rec in recs:
+        rec['score'] /= max_sup
+
+    recs.sort(key=lambda x: x['score'], reverse=True)
+
+    if max_recs:
+        recs = recs[:max_recs]
+
     return render(request, 'dashboard/recommend.html',
                   {'recommendations': recs})
 
@@ -254,7 +284,7 @@ def get_recommendations(request, milestones):
 @transaction.commit_manually
 def generate_recommendations(request):
     recommendations, names = recommend(recommendationfunction='trail',
-                                       minsup=2, minconf=.5, gamma=.3)
+                                       minsup=2, minconf=.3, gamma=.8)
     # Add recommendations to database
     Recommendation.objects.all().delete()
     i = 0
