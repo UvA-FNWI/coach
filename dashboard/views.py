@@ -178,8 +178,10 @@ def cache_activities(request):
                 value = 0
         a, created = Activity.objects.get_or_create(user=user,
                                                     activity=activity)
-        # Don't overwrite completed; only overwite with more recent timestamp
-        if created or (time > a.time and a.verb != COMPLETED):
+        # Don't overwrite completed except with other completed events
+        # and only overwite with more recent timestamp
+        if created or (time > a.time and \
+                (verb == COMPLETED or a.verb != COMPLETED)):
             a.verb = verb
             a.type = type
             a.value = value
