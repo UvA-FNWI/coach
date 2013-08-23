@@ -197,7 +197,7 @@ def index(request, cached=True):
     email = request.GET.get('email', DEBUG_USER['email']);
     if cached:
         statements = map(lambda x: Activity._dict(x),
-                Activity.objects.filter(user="mailto:%s"%(email,)))
+                Activity.objects.filter(user="mailto:%s"%(email,)).order_by('-time'))
     else:
         tincan = TinCan(USERNAME, PASSWORD, ENDPOINT)
         obj = {'agent': {'mbox': 'mailto:%s' % email}}
