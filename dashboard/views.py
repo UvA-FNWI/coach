@@ -245,19 +245,26 @@ def get_recommendations(request, milestones, max_recs=False):
     rec_objs = Recommendation.objects
     recs = []
 
+    # Exclude completed items from recommendations
+    email = request.GET.get('email', DEBUG_USER['email'])
+    ex_objs = Activity.objects.filter(user='mailto:%s' % (email,))
+    ex_objs = seen_objs.exclude(verb=COMPLETED)
+    ex = set(map(lambda x: x.activity, seen_objs))
+
     for milestone in milestones.split(','):
         tmp = rec_objs.filter(milestone=milestone)
         for rec in tmp:
-            score = f_score(rec.confidence, rec.support, beta=1.5)
-            recs.append({'milestone': rec.milestone,
-                         'url': rec.url,
-                         'id': rand_id(),
-                         'name': rec.get_name(),
-                         'desc': rec.get_desc(),
-                         'm_name': rec.get_m_name(),
-                         'confidence': rec.confidence,
-                         'support': rec.support,
-                         'score': score})
+            if rec.url not in ex:
+                score = f_score(rec.confidence, rec.support, beta=1.5)
+                recs.append({'milestone': rec.milestone,
+                             'url': rec.url,
+                             'id': rand_id(),
+                             'name': rec.get_name(),
+                             'desc': rec.get_desc(),
+                             'm_name': rec.get_m_name(),
+                             'confidence': rec.confidence,
+                             'support': rec.support,
+                             'score': score})
 
     # Normalise support
     max_sup = max(map(lambda x: x['score'], recs))
