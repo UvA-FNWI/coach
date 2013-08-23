@@ -259,7 +259,7 @@ def get_recommendations(request, milestones, max_recs=False):
     # Exclude completed items from recommendations
     email = request.GET.get('email', DEBUG_USER['email'])
     seen_objs = Activity.objects.filter(user='mailto:%s' % (email,))
-    ex_objs = seen_objs.exclude(verb=COMPLETED)
+    ex_objs = seen_objs.exclude(verb=COMPLETED, value__gte=.8)
     ex = set(map(lambda x: x.activity, seen_objs))
 
     for milestone in milestones.split(','):
