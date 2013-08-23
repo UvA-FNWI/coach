@@ -166,15 +166,12 @@ def cache_activities(request):
         name = resp['object']['definition']['name']['en-US']
         description = resp['object']['definition']['description']['en-US']
         time = dateutil.parser.parse(resp['timestamp'])
-        if type == ASSESSMENT:
-            try:
-                raw = resp['result']['score']['raw']
-                min = resp['result']['score']['min']
-                max = resp['result']['score']['max']
-                value = 100 * (raw - min) / max
-            except KeyError:
-                value = 0
-        else:
+        try:
+            raw = resp['result']['score']['raw']
+            min = resp['result']['score']['min']
+            max = resp['result']['score']['max']
+            value = 100 * (raw - min) / max
+        except KeyError:
             try:
                 value = 100 * float(resp['result']['extensions'][PROGRESS_T])
             except KeyError:
