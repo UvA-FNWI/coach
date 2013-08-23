@@ -1,19 +1,22 @@
 <html style="padding: 0; margin: 0">
 	<body style="padding: 0; margin: 0" >
 		<svg style="" width="100%" height="{{height}}px" id="progress"
-			xmlns="http://www.w3.org/2000/svg" style='background: #ffffff'
-			viewBox="0 0 {{ width }} {{height}}" version="1.1">
+			xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 {{ width }} {{height}}" version="1.1">
 		{% for p in people %}
-			<line x1="{{ p }}" y1="3" x2="{{ p }}" y2="{{height|add:"-3"}}"
+			<line x1="{{ p }}" y1="5" x2="{{ p }}" y2="{{height|add:"-5"}}"
 				style="stroke:rgb(0,0,0);stroke-width:1.000000;stroke-opacity:0.100000" />
 		{% endfor%}
-			<polygon points="{{user|add:"-2"}},2 {{user|add:"2"}},2 {{user}},0" 
-				style="fill:red;stroke:red;stroke-width:1" />
-			<line x1="{{ user }}" y1="0" x2="{{ user }}" y2="{{height}}"
-				style="stroke:rgb(255,0,0);stroke-width:2.000000;stroke-opacity:1" />
-				<polygon points="{{user|add:"-2"}},{{height|add:"-2"}}
-					{{user|add:"2"}},{{height|add:"-2"}} {{user}},{{height}}" 
-				style="fill:red;stroke:red;stroke-width:1" />
+    <polygon points="
+      {{user|add:"-4"}},0 {{user|add:"4"}},0
+      {{user|add:"1"}},4 {{user|add:"-1"}},4" 
+				style="fill:#000000;stroke:#000000;stroke-width:1" />
+			<line x1="{{ user }}" y1="4" x2="{{ user }}" y2="{{height|add:"-4"}}"
+				style="stroke:#000000;stroke-width:3;" />
+      <polygon points="
+        {{user|add:"-4"}},{{height}} {{user|add:"4"}},{{height}}
+        {{user|add:"1"}},{{height|add:"-4"}} {{user|add:"-1"}},{{height|add:"-4"}}"
+				style="fill:#000000;stroke:#000000;stroke-width:1" />
 </svg>
 </body>
 </html>

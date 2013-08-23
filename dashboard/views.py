@@ -31,7 +31,7 @@ pre_url = "https://www.google.com/accounts/ServiceLogin?service=ah" +\
           "conflogin%3Fcontinue%3Dhttp://www.iktel.nl/postlogin%253F" +\
           "continue%253D"
 
-BARCODE_HEIGHT = 30
+BARCODE_HEIGHT = 35
 
 
 def parse_statements(objects):
@@ -105,11 +105,13 @@ def getallen(request):
     return render(request, 'dashboard/getallen.html', {})
 
 
-def barcode(request, width=170):
+def barcode(request, default_width=170):
     """Return an svg representing progress of an individual vs the group."""
 
     email = request.GET.get('email', DEBUG_USER['email'])
     mbox = 'mailto:%s' % (email,)
+
+    width = int(request.GET.get('width', default_width))
 
     all = Activity.objects
     data = {'width': width, 'height': BARCODE_HEIGHT}
@@ -130,14 +132,20 @@ def barcode(request, width=170):
     data['people'] = people.values()
 
     # Normalise
-    maximum = max(max(people.values()), data['user'])
-    data['user'] /= maximum
-    data['user'] *= width
-    data['user'] = int(data['user'])
-    for i, person in enumerate(data['people']):
-        data['people'][i] /= maximum
-        data['people'][i] *= width
-        data['people'][i] = int(data['people'][i])
+    if len(people) > 0:
+        maximum = max(max(people.values()), data['user'])
+        data['user'] /= maximum
+        data['user'] *= width
+        data['user'] = int(data['user'])
+        for i, person in enumerate(data['people']):
+            data['people'][i] /= maximum
+            data['people'][i] *= width
+            data['people'][i] = int(data['people'][i])
+    else:
+        # if no other persons have been active
+        # then user is assumed to be in the lead.
+        # This is regardless if the user has done anything at all.
+        data['user'] = width
 
     return render(request, 'dashboard/barcode.svg', data)
 
