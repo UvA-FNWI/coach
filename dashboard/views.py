@@ -122,8 +122,11 @@ def barcode(request, width=170):
             people[activity.user] += min(80, activity.value)
         else:
             people[activity.user] = min(80, activity.value)
-    data['user'] = people[mbox]
-    del people[mbox]
+    if mbox in people:
+        data['user'] = people[mbox]
+        del people[mbox]
+    else:
+        data['user'] = 0
     data['people'] = people.values()
 
     # Normalise
