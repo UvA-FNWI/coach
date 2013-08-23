@@ -231,6 +231,11 @@ def index(request, cached=True):
 def bootstrap(request):
     return render(request, 'dashboard/bootstrap.html')
 
+
+def f_score(confidence, support, beta=1):
+    return (1 + beta ** 2) * ((confidence * support) /
+                              (beta ** 2  * confidence + support))
+
 # Recommendations
 def get_recommendations(request, milestones):
     rec_objs = Recommendation.objects
@@ -239,6 +244,7 @@ def get_recommendations(request, milestones):
     for milestone in milestones.split(','):
         tmp = rec_objs.filter(milestone=milestone)
         for rec in tmp:
+            score = f_score(rec.confidence, rec.support)
             recs.append({'milestone': rec.milestone,
                          'url': rec.url,
                          'id': rand_id(),
@@ -246,7 +252,10 @@ def get_recommendations(request, milestones):
                          'desc': rec.get_desc(),
                          'm_name': rec.get_m_name(),
                          'confidence': rec.confidence,
-                         'support': rec.support})
+                         'support': rec.support,
+                         'score': score})
+    max_sup
+    recs.sort(key=lambda x: x['score'], reverse=True)
     return render(request, 'dashboard/recommend.html',
                   {'recommendations': recs})
 
