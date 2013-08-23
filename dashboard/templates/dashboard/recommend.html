@@ -23,8 +23,10 @@
 							 target="_blank" >{{ r.name }}</a><br />
 						<small class="text-muted">Recommended for: <a href="{{ m.milestone }}">
 							{{ r.m_name }}</a></small>
+					  <!--
 						<small class="pull-right text-muted">c: {{ r.confidence|floatformat }},
 							s: {{ r.support|floatformat }} :: {{ r.score|floatformat }}</small>
+						-->
 						<script type="text/javascript">
 							$('#{{ s.id }}').tooltip();
 						</script>
