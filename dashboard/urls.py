@@ -14,4 +14,5 @@ urlpatterns = patterns('',
             name='generate recommendations'),
         url(r'^recommend/(?P<milestones>.+)$', views.get_recommendations,
             name='get recommendations'),
+        url(r'^track$', views.track, name='track'),
         )

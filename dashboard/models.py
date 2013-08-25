@@ -65,4 +65,21 @@ class Activity(models.Model):
     def __unicode__(self):
         return self.user + ' ' + self.activity + ' ' + str(self.value)
 
+class Click(models.Model):
+    target = models.URLField()
+    env1 = models.URLField()
+    env2 = models.URLField()
+    env3 = models.URLField()
+    env4 = models.URLField()
+
+    def _dict(self):
+        return {'target': self.target,
+                'env1': self.env1,
+                'env2': self.env2,
+                'env3': self.env3,
+                'env4': self.env4}
+
+    def __unicode__(self):
+        return 'Clicked on:' + str(self.target)
+
 # * Assignments have scores and questions have progress
