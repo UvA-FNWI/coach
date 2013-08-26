@@ -65,6 +65,8 @@ class Activity(models.Model):
     def __unicode__(self):
         return self.user + ' ' + self.activity + ' ' + str(self.value)
 
+# * Assignments have scores and questions have progress
+
 
 class LogEvent(models.Model):
     TYPES = (('G', 'Generated recommendations'),
@@ -80,4 +82,12 @@ class LogEvent(models.Model):
         return str(dict(self.TYPES)[self.type]) + ', ' + str(self.user) +\
                ', ' + str(self.context)
 
-# * Assignments have scores and questions have progress
+
+class GroupAssignment(models.Model):
+    GROUPS = (('A', 'Group A: Dashboard'),
+              ('B', 'Group B: No Dashboard'))
+    user = models.EmailField()
+    group = models.CharField(max_length=1, choices=GROUPS)
+
+    def __unicode__(self):
+        return str(self.user) + str(dict(self.GROUPS)[self.group])

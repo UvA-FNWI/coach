@@ -1,12 +1,14 @@
 from django.http import HttpResponse
+from django.core.exceptions import ObjectDoesNotExist
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login
 from django.conf import settings
 from django.db import transaction
 from django.template import RequestContext, loader
 from recommendation import recommend
-from models import Activity, Recommendation, LogEvent, rand_id
+from models import Activity, Recommendation, LogEvent, rand_id, GroupAssignment
 from tincan_api import TinCan
+import random
 import json
 import re
 import dateutil.parser
@@ -209,7 +211,54 @@ def fix_url(statement):
         statement['url'] = pre_url + statement['url']
 
 
+def check_group(func):
+    def inner(*args, **kwargs):
+        email = args[0].GET.get('email', '')
+        user = email
+        # Existing user
+        try:
+            assignment = GroupAssignment.objects.get(user=user)
+            print 'existing user'
+            if assignment.group == 'A':
+                return func(*args, **kwargs)
+            else:
+                return HttpResponse()
+        # New user
+        except ObjectDoesNotExist:
+            print 'new user'
+            # First half of new pair
+            if GroupAssignment.objects.count() % 2 == 0:
+                print 'new pair'
+                group = bool(random.choice(['A', 'B']))
+                if group == 'A':
+                    print 'group A'
+                    ga = GroupAssignment(user=user, group='A')
+                    ga.save()
+                    return func(*args, **kwargs)
+                else:
+                    print 'group B'
+                    ga = GroupAssignment(user=user, group='B')
+                    ga.save()
+                    return HttpResponse()
+            # Second half of new pair
+            else:
+                print 'existing pair'
+                last_group = GroupAssignment.objects.last().group
+                if last_group == 'A':
+                    print 'group A'
+                    ga = GroupAssignment(user=user, group='B')
+                    ga.save()
+                    return HttpResponse()
+                else:
+                    print 'group B'
+                    ga = GroupAssignment(user=user, group='A')
+                    ga.save()
+                    return func(*args, **kwargs)
+    return inner
+
+
 # dashboard
+@check_group
 def index(request, cached=True):
     email = request.GET.get('email', DEBUG_USER['email'])
     activities = Activity.objects
@@ -260,7 +309,7 @@ def f_score(confidence, support, beta=1):
                               (beta ** 2 * confidence + support))
 
 
-# Recommendations
+@check_group
 def get_recommendations(request, milestones, max_recs=False):
     rec_objs = Recommendation.objects
     recs = []
@@ -298,7 +347,7 @@ def get_recommendations(request, milestones, max_recs=False):
 
     # Log Recommendations viewed
     email = request.GET.get('email', '')
-    user = 'mailto:' + email
+    user = email
     data = json.dumps(map(lambda x: x['url'], recs))
     event = LogEvent(type='V', user=user, data=data)
     event.save()
@@ -347,7 +396,7 @@ def track(request, defaulttarget='index.html'):
     target = request.GET.get('target', defaulttarget)
     context = int(request.GET.get('context', ''))
     email = request.GET.get('email', '')
-    user = 'mailto:' + email
+    user = email
 
     try:
         context = LogEvent.objects.get(pk=context)
