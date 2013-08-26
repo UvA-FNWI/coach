@@ -5,7 +5,7 @@ from django.conf import settings
 from django.db import transaction
 from django.template import RequestContext, loader
 from recommendation import recommend
-from models import Activity, Recommendation, Click, LogEvent, rand_id
+from models import Activity, Recommendation, LogEvent, rand_id
 from tincan_api import TinCan
 import json
 import re
@@ -204,6 +204,11 @@ def cache_activities(request):
     return HttpResponse()
 
 
+def fix_url(statement):
+    if re.search('www.iktel.nl', statement['url']):
+        statement['url'] = pre_url + statement['url']
+
+
 # dashboard
 def index(request, cached=True):
     email = request.GET.get('email', DEBUG_USER['email'])
@@ -216,12 +221,11 @@ def index(request, cached=True):
         tincan = TinCan(USERNAME, PASSWORD, ENDPOINT)
         obj = {'agent': {'mbox': 'mailto:%s' % email}}
         tc_resp = tincan.getFilteredStatements(obj)
-        #tc_resp = tincan.getAllStatements()  # debug
+        #tc_resp = tincan.getAllStatements()  # debug, TODO: remove this line
         statements = parse_statements(tc_resp)
 
     for statement in statements:
-        if re.search('www.iktel.nl', statement['url']):
-            statement['url'] = pre_url + statement['url']
+        fix_url(statement)
 
     statements = split_statements(statements)
 
@@ -292,8 +296,14 @@ def get_recommendations(request, milestones, max_recs=False):
     if max_recs:
         recs = recs[:max_recs]
 
+    # Log Recommendations viewed
+    user = request.GET.get('user', '')
+    data = json.dumps(map(lambda x: x['url'], recs))
+    event = LogEvent(type='V', user=user, data=data)
+    event.save()
+
     return render(request, 'dashboard/recommend.html',
-                  {'recommendations': recs})
+                  {'recommendations': recs, 'context': event.id})
 
 
 @transaction.commit_manually
@@ -323,8 +333,12 @@ def generate_recommendations(request):
                              description=description)
         rec.save()
 
+    event = LogEvent(type='G', user='all', data=json.dumps(recommendations))
+    event.save()
+
     transaction.commit()
     return HttpResponse(pformat(recommendations))
+
 
 # Tracking
 def track(request, defaulttarget='index.html'):
@@ -335,9 +349,12 @@ def track(request, defaulttarget='index.html'):
     try:
         context = LogEvent.objects.get(pk=context)
     except LogEvent.DoesNotExist:
-        #do something 
+        #do something
+        pass
 
-    event = LogEvent(type='GenR', user=user, data=target, context=context)
+    event = LogEvent(type='C', user=user, data=target, context=context)
     event.save()
 
-    return redirect(target) 
+    if re.search('www.iktel.nl', target):
+        target = pre_url + target
+    return redirect(target)

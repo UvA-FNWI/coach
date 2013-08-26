@@ -67,31 +67,16 @@ class Activity(models.Model):
 
 
 class LogEvent(models.Model):
-    TYPES = (('GenR', 'Generated recommendations'),
-             ('ViewR', 'Viewed recommendations'),
-             ('ClickR', 'Clicked on recommendation'))
-    type = models.CharField(max_length=6, choices=TYPES)
+    TYPES = (('G', 'Generated recommendations'),
+             ('V', 'Viewed recommendations'),
+             ('C', 'Clicked on recommendation'))
+    type = models.CharField(max_length=1, choices=TYPES)
     user = models.EmailField()
     data = models.TextField()
-    context = models.ForeignKey('self')
-    timestamp = models.TimeField(auto_now_add=True)
-
-
-class Click(models.Model):
-    target = models.URLField()
-    env1 = models.URLField()
-    env2 = models.URLField()
-    env3 = models.URLField()
-    env4 = models.URLField()
-
-    def _dict(self):
-        return {'target': self.target,
-                'env1': self.env1,
-                'env2': self.env2,
-                'env3': self.env3,
-                'env4': self.env4}
+    context = models.ForeignKey('self', null=True)
+    timestamp = models.DateTimeField(auto_now_add=True)
 
     def __unicode__(self):
-        return 'Clicked on:' + str(self.target)
+        return dict(self.TYPES)[self.type] + ': ' + self.data
 
 # * Assignments have scores and questions have progress
