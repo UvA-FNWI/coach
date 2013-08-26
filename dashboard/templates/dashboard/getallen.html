@@ -38,12 +38,14 @@
     <!-- load User object -->
     <script src="/static/dashboard/user.js"></script>
     <script type="text/javascript">
+		var body = $('body', window.parent.document);
+		body.append('<div id="lightbox" style="display: block; position: absolute; top: 0; left: 0; background-color: rgba(0,0,0,.8); width: 100%; height: 100%;" ></div>');
         // load function
         function load_user(){
             // Set callback for when email is retrieved
             User.success_cb = function(){
 	            $.get(
-                    "http://localhost:8000?email="+User.email,
+                    "http://localhost:8000/bootstrap",
 					function(data){$('#coach').html(data)}
 				);
             }
