@@ -77,6 +77,7 @@ class LogEvent(models.Model):
     timestamp = models.DateTimeField(auto_now_add=True)
 
     def __unicode__(self):
-        return dict(self.TYPES)[self.type] + ': ' + self.data
+        return str(dict(self.TYPES)[self.type]) + ', ' + str(self.user) +\
+               ', ' + str(self.context)
 
 # * Assignments have scores and questions have progress

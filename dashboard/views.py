@@ -297,13 +297,15 @@ def get_recommendations(request, milestones, max_recs=False):
         recs = recs[:max_recs]
 
     # Log Recommendations viewed
-    user = request.GET.get('user', '')
+    email = request.GET.get('email', '')
+    user = 'mailto:' + email
     data = json.dumps(map(lambda x: x['url'], recs))
     event = LogEvent(type='V', user=user, data=data)
     event.save()
 
     return render(request, 'dashboard/recommend.html',
-                  {'recommendations': recs, 'context': event.id})
+                  {'recommendations': recs, 'context': event.id,
+                   'email': email})
 
 
 @transaction.commit_manually
@@ -344,7 +346,8 @@ def generate_recommendations(request):
 def track(request, defaulttarget='index.html'):
     target = request.GET.get('target', defaulttarget)
     context = int(request.GET.get('context', ''))
-    user = request.GET.get('user', '')
+    email = request.GET.get('email', '')
+    user = 'mailto:' + email
 
     try:
         context = LogEvent.objects.get(pk=context)
