@@ -65,6 +65,18 @@ class Activity(models.Model):
     def __unicode__(self):
         return self.user + ' ' + self.activity + ' ' + str(self.value)
 
+
+class LogEvent(models.Model):
+    TYPES = (('GenR', 'Generated recommendations'),
+             ('ViewR', 'Viewed recommendations'),
+             ('ClickR', 'Clicked on recommendation'))
+    type = models.CharField(max_length=6, choices=TYPES)
+    user = models.EmailField()
+    data = models.TextField()
+    context = models.ForeignKey('self')
+    timestamp = models.TimeField(auto_now_add=True)
+
+
 class Click(models.Model):
     target = models.URLField()
     env1 = models.URLField()

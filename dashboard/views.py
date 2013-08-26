@@ -5,7 +5,7 @@ from django.conf import settings
 from django.db import transaction
 from django.template import RequestContext, loader
 from recommendation import recommend
-from models import Activity, Recommendation, Click, rand_id
+from models import Activity, Recommendation, Click, LogEvent, rand_id
 from tincan_api import TinCan
 import json
 import re
@@ -329,12 +329,15 @@ def generate_recommendations(request):
 # Tracking
 def track(request, defaulttarget='index.html'):
     target = request.GET.get('target', defaulttarget)
-    env1 = request.GET.get('env1', '')
-    env2 = request.GET.get('env2', '')
-    env3 = request.GET.get('env3', '')
-    env4 = request.GET.get('env4', '')
-    
-    click = Click(target=target, env1=env1, env2=env2, env3=env3, env4=env4)
-    click.save()
+    context = int(request.GET.get('context', ''))
+    user = request.GET.get('user', '')
+
+    try:
+        context = LogEvent.objects.get(pk=context)
+    except LogEvent.DoesNotExist:
+        #do something 
+
+    event = LogEvent(type='GenR', user=user, data=target, context=context)
+    event.save()
 
     return redirect(target) 
