@@ -242,6 +242,11 @@ def index(request, cached=True):
     return response
 
 
+def bootstrap_recommend(request, milestones):
+    return render(request, 'dashboard/bootstrap_recommend.html',
+                  {'milestones': milestones})
+
+
 def bootstrap(request):
     return render(request, 'dashboard/bootstrap.html')
 
