@@ -357,7 +357,8 @@ def get_recommendations(request, milestones, max_recs=False):
 
 
 @transaction.commit_manually
-def generate_recommendations(request, from_cache=True):
+def generate_recommendations(request):
+    from_cache = request.GET.get('c', False)
     if from_cache:
         cache_activities(request)
         # TODO: proper data
