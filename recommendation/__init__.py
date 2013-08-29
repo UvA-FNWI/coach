@@ -66,13 +66,13 @@ def recommend(recommendationfunction='apriori', inputverbs=None, **kwargs):
                 continue
 
             actor = activity.user     # TODO replace mbox by ID
-            name_description[activity.id] = \
+            name_description[activity.activity] = \
                     (activity.name,
                      activity.description)
 
             # Use assessments to separate timeslices per actor
             if activity.type == tc.ACTIVITY_TYPES['assessment']:
-                assessment_id = activity.id
+                assessment_id = activity.activity
                 milestones[actor] = assessment_id       # For every milestone:
 
                 # Keep track of all assessments in reverse chronological order as well
@@ -85,7 +85,7 @@ def recommend(recommendationfunction='apriori', inputverbs=None, **kwargs):
                 if assessment_id == 'NO_ASSESSMENT':
                     continue
 
-                statement_obj = activity.id
+                statement_obj = activity.activity
                 transactions[assessment_id][actor].append(statement_obj)
                 freq[assessment_id][0][(statement_obj,)] += 1
     else:
