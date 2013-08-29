@@ -207,9 +207,11 @@ def cache_activities(request):
     return HttpResponse()
 
 
-def fix_url(statement):
-    if re.search('www.iktel.nl', statement['url']):
-        statement['url'] = pre_url + statement['url']
+
+def fix_url(url):
+    if re.search('www.iktel.nl', url):
+        return pre_url + url
+    return url
 
 
 def check_group(func):
@@ -267,7 +269,7 @@ def index(request, cached=True):
         statements = parse_statements(tc_resp)
 
     for statement in statements:
-        fix_url(statement)
+        statement['url'] = fix_url(statement['url'])
 
     statements = split_statements(statements)
 
@@ -404,6 +406,4 @@ def track(request, defaulttarget='index.html'):
     event = LogEvent(type='C', user=user, data=target, context=context)
     event.save()
 
-    if re.search('www.iktel.nl', target):
-        target = pre_url + target
-    return redirect(target)
+    return redirect(fix_url(target)
