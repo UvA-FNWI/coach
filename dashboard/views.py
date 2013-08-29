@@ -364,10 +364,9 @@ def get_recommendations(request, milestones, max_recs=False):
                    'host': request.get_host()})
 
 
-#@transaction.commit_manually
+@transaction.commit_manually
 def generate_recommendations(request):
     from_cache = int(request.GET.get('c', False))
-    print from_cache, type(from_cache)
     if from_cache:
         cache_activities(request)
         # TODO: proper data
