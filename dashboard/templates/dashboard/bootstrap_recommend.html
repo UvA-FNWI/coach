@@ -12,7 +12,7 @@ function load_user(){
 	User.success_cb = function(){
 		$('lightbox').remove();
 		$.get(
-				"http://localhost:8000/recommend/{{ milestones }}?email="+User.email,
+				"http://{{ host }}/recommend/{{ milestones }}?email="+User.email,
 				function(data){$('#coach').html(data)}
 			 );
 	}

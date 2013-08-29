@@ -70,7 +70,7 @@ def parse_statements(objects):
                           'desc': desc,
                           'id': rand_id()}
         except KeyError as e:
-            print 'Error:', e
+            print('Error:', e)
     return r.values()
 
 
@@ -104,7 +104,8 @@ def split_statements(statements):
 
 # TODO: Remove. This is just for testing
 def getallen(request):
-    return render(request, 'dashboard/getallen.html', {})
+    return render(request, 'dashboard/getallen.html',
+                  {'host': request.get_host()})
 
 
 def barcode(request, default_width=170):
@@ -218,39 +219,31 @@ def check_group(func):
         # Existing user
         try:
             assignment = GroupAssignment.objects.get(user=user)
-            print 'existing user'
             if assignment.group == 'A':
                 return func(*args, **kwargs)
             else:
                 return HttpResponse()
         # New user
         except ObjectDoesNotExist:
-            print 'new user'
             # First half of new pair
             if GroupAssignment.objects.count() % 2 == 0:
-                print 'new pair'
                 group = bool(random.choice(['A', 'B']))
                 if group == 'A':
-                    print 'group A'
                     ga = GroupAssignment(user=user, group='A')
                     ga.save()
                     return func(*args, **kwargs)
                 else:
-                    print 'group B'
                     ga = GroupAssignment(user=user, group='B')
                     ga.save()
                     return HttpResponse()
             # Second half of new pair
             else:
-                print 'existing pair'
                 last_group = GroupAssignment.objects.last().group
                 if last_group == 'A':
-                    print 'group A'
                     ga = GroupAssignment(user=user, group='B')
                     ga.save()
                     return HttpResponse()
                 else:
-                    print 'group B'
                     ga = GroupAssignment(user=user, group='A')
                     ga.save()
                     return func(*args, **kwargs)
@@ -297,11 +290,13 @@ def index(request, cached=True):
 
 def bootstrap_recommend(request, milestones):
     return render(request, 'dashboard/bootstrap_recommend.html',
-                  {'milestones': milestones})
+                  {'milestones': milestones,
+                   'host': request.get_host()})
 
 
 def bootstrap(request):
-    return render(request, 'dashboard/bootstrap.html')
+    return render(request, 'dashboard/bootstrap.html',
+                  {'host': request.get_host()})
 
 
 def f_score(confidence, support, beta=1):
@@ -353,8 +348,10 @@ def get_recommendations(request, milestones, max_recs=False):
     event.save()
 
     return render(request, 'dashboard/recommend.html',
-                  {'recommendations': recs, 'context': event.id,
-                   'email': email})
+                  {'recommendations': recs,
+                   'context': event.id,
+                   'email': email,
+                   'host': request.get_host()})
 
 
 @transaction.commit_manually
