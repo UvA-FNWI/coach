@@ -36,6 +36,9 @@ def recommend(recommendationfunction='apriori', inputverbs=None, **kwargs):
       1. Top X will not be altered, based on people submitted/threshold conf/sup
 
     '''
+    activities = kwargs['cache'] if 'cache' in kwargs else None
+    # FIXME use cached activities, way faster, but differently formatted
+
     tc = TinCan(settings.TINCAN['username'],
                 settings.TINCAN['password'],
                 settings.TINCAN['endpoint'])

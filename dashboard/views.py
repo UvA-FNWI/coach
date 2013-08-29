@@ -357,9 +357,17 @@ def get_recommendations(request, milestones, max_recs=False):
 
 
 @transaction.commit_manually
-def generate_recommendations(request):
-    recommendations, names = recommend(recommendationfunction='trail',
-                                       minsup=2, minconf=.3, gamma=.8)
+def generate_recommendations(request, from_cache=False):
+    if from_cache:
+        cache_activities(request)
+        # TODO: proper data
+        activities = Activity.objects.filter()
+        recommendations, names = recommend(activities=activities,
+                                           recommendationfunction='trail',
+                                           minsup=2, minconf=.3, gamma=.8)
+    else:
+        recommendations, names = recommend(recommendationfunction='trail',
+                                           minsup=2, minconf=.3, gamma=.8)
     # Add recommendations to database
     Recommendation.objects.all().delete()
     i = 0
