@@ -2,8 +2,9 @@
 Collects data from the learning record store, from which recommendations can
 be made using a prespecified algorithm and corresponding settings.
 
-Auth: Auke Wiggers
+Auth: Auke Wiggers & Steven Laan
 Date: 30-07-2013
+Last Modified: 29-08-2013
 '''
 
 import sys
@@ -84,9 +85,10 @@ def recommend(recommendationfunction='apriori', inputverbs=None, **kwargs):
                 assessment_id = milestones[actor]
                 if assessment_id == 'NO_ASSESSMENT':
                     continue
-
+    
+                value = activity.value if activity.verb == tc.VERBS['progressed']['id'] else 1.0
                 statement_obj = activity.activity
-                transactions[assessment_id][actor].append(statement_obj)
+                transactions[assessment_id][actor].append((statement_obj, value))
                 freq[assessment_id][0][(statement_obj,)] += 1
     else:
         print 'not using cache'
@@ -119,9 +121,9 @@ def recommend(recommendationfunction='apriori', inputverbs=None, **kwargs):
                 assessment_id = milestones[actor]
                 if assessment_id == 'NO_ASSESSMENT':
                     continue
-
+                value = statement['result']['extensions']['http://uva.nl/coach/progress'] if statement['verb']['id'] == tc.VERBS['progressed']['id'] else 1.0
                 statement_obj = statement['object']['id']
-                transactions[assessment_id][actor].append(statement_obj)
+                transactions[assessment_id][actor].append((statement_obj, value))
                 freq[assessment_id][0][(statement_obj,)] += 1
 
     # Use baskets as transactions and recommend
