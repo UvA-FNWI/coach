@@ -356,14 +356,12 @@ def get_recommendations(request, milestones, max_recs=False):
                    'host': request.get_host()})
 
 
-#@transaction.commit_manually
+@transaction.commit_manually
 def generate_recommendations(request, from_cache=True):
     if from_cache:
-        print 'using cache'
         cache_activities(request)
         # TODO: proper data
         activities = Activity.objects.filter()
-        print activities
         recommendations, names = recommend(activities=activities,
                                            recommendationfunction='trail',
                                            minsup=2, minconf=.3, gamma=.8)
