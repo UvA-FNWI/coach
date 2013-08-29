@@ -1,2 +1,4 @@
+# update the cache of the LRS (for displaying in the dashboard)
 */10	* * * *	wget -nv --spider localhost:8000/cache
+# Generate recommendations from the activities. 
 0		* * * *	wget -nv --spider localhost:8000/recommendations
