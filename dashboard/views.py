@@ -28,7 +28,9 @@ ANSWERED = TinCan.VERBS['answered']['id']
 QUESTION = TinCan.ACTIVITY_TYPES['question']
 ASSESSMENT = TinCan.ACTIVITY_TYPES['assessment']
 PROGRESS_T = "http://uva.nl/coach/progress"
-pre_url = "https://www.google.com/accounts/ServiceLogin?service=ah" +\
+
+# To ensure iktel login
+PRE_URL = "https://www.google.com/accounts/ServiceLogin?service=ah" +\
           "&passive=true&continue=https://appengine.google.com/_ah/" +\
           "conflogin%3Fcontinue%3Dhttp://www.iktel.nl/postlogin%253F" +\
           "continue%253D"
@@ -158,6 +160,8 @@ def barcode(request, default_width=170):
 def cache_activities(request):
     """Create a cache of the Learning Record Store by getting all items since
     the most recent one in the cache.
+    Save only latest completed actions and only progress for uncompleted items
+    per user.
     """
     # Find most recent date
     try:
@@ -194,8 +198,8 @@ def cache_activities(request):
                                                     activity=activity)
         # Don't overwrite completed except with other completed events
         # and only overwite with more recent timestamp
-        if created or (time > a.time and \
-                (verb == COMPLETED or a.verb != COMPLETED)):
+        if created or (time > a.time and
+                       (verb == COMPLETED or a.verb != COMPLETED)):
             a.verb = verb
             a.type = type
             a.value = value
@@ -207,14 +211,20 @@ def cache_activities(request):
     return HttpResponse()
 
 
-
 def fix_url(url):
+    """Make sure the iktel lings go through the appengine login first."""
     if re.search('www.iktel.nl', url):
-        return pre_url + url
+        return PRE_URL + url
     return url
 
 
 def check_group(func):
+    """Decorator to check the group for A/B testing.
+    Users in group A see the dashboard and users in group B do not.
+    Users that are in no group will be assigned one, so that both groups differ
+    at most 1 in size. If both groups are the same size, the group will be
+    assigned pseudorandomly.
+    """
     def inner(*args, **kwargs):
         email = args[0].GET.get('email', '')
         user = email
@@ -252,7 +262,6 @@ def check_group(func):
     return inner
 
 
-# dashboard
 @check_group
 def index(request, cached=True):
     email = request.GET.get('email', DEBUG_USER['email'])
@@ -265,7 +274,6 @@ def index(request, cached=True):
         tincan = TinCan(USERNAME, PASSWORD, ENDPOINT)
         obj = {'agent': {'mbox': 'mailto:%s' % email}}
         tc_resp = tincan.getFilteredStatements(obj)
-        #tc_resp = tincan.getAllStatements()  # debug, TODO: remove this line
         statements = parse_statements(tc_resp)
 
     for statement in statements:
@@ -399,8 +407,10 @@ def generate_recommendations(request):
     return HttpResponse(pformat(recommendations))
 
 
-# Tracking
 def track(request, defaulttarget='index.html'):
+    """Track user clicks so that we may be able to improve recommendation
+    relevance in the future.
+    """
     target = request.GET.get('target', defaulttarget)
     context = int(request.GET.get('context', ''))
     email = request.GET.get('email', '')
