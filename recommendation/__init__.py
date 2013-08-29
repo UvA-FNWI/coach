@@ -36,13 +36,11 @@ def recommend(recommendationfunction='apriori', inputverbs=None, **kwargs):
       1. Top X will not be altered, based on people submitted/threshold conf/sup
 
     '''
-    activities = kwargs['cache'] if 'cache' in kwargs else None
-    # FIXME use cached activities, way faster, but differently formatted
+    use_cache = 'activities' in kwargs
 
     tc = TinCan(settings.TINCAN['username'],
                 settings.TINCAN['password'],
                 settings.TINCAN['endpoint'])
-
     # By default, get all info from users who completed
     if inputverbs:
         verbs = [tc.VERBS[verb]['id'] for verb in inputverbs]
@@ -52,44 +50,79 @@ def recommend(recommendationfunction='apriori', inputverbs=None, **kwargs):
             'max_consequent_size' in kwargs else 1
     verbose = kwargs['verbose'] if 'verbose' in kwargs else False
 
-    now = time.time()
-    statements = tc.getAllStatements()
-    print 'Time taken: {0:2g}'.format(time.time() - now)
-
-    # Loop over reverse chronological data
     milestones = defaultdict(lambda : 'NO_ASSESSMENT')       # progress per actor
     assessment_ids = []
     transactions = dict()
     freq = dict()
     name_description = dict()
 
-    for statement in statements:
-        if statement['verb']['id'] not in verbs:
-            continue
-
-        actor = statement['actor']['mbox']     # TODO replace mbox by ID
-        name_description[statement['object']['id']] = \
-                (statement['object']['definition']['name'],
-                 statement['object']['definition']['description'])
-
-        # Use assessments to separate timeslices per actor
-        if statement['object']['definition']['type'] == tc.ACTIVITY_TYPES['assessment']:
-            assessment_id = statement['object']['id']
-            milestones[actor] = assessment_id       # For every milestone:
-
-            # Keep track of all assessments in reverse chronological order as well
-            if not assessment_id in assessment_ids:
-                transactions[assessment_id] = defaultdict(list) # verbs+objects /actor
-                freq[assessment_id] = {0: defaultdict(int)}     # frequency of 1-pairs
-                assessment_ids.append(assessment_id)
-        else:
-            assessment_id = milestones[actor]
-            if assessment_id == 'NO_ASSESSMENT':
+    if use_cache:
+        print 'using cache'
+        activities = kwargs['activities']
+        # FIXME use cached activities, way faster, but differently formatted
+        # Loop over reverse chronological data
+        for activity in activities:
+            if activity.verb not in verbs:
                 continue
 
-            statement_obj = statement['object']['id']
-            transactions[assessment_id][actor].append(statement_obj)
-            freq[assessment_id][0][(statement_obj,)] += 1
+            actor = activity.user     # TODO replace mbox by ID
+            name_description[activity.id] = \
+                    (activity.name,
+                     activity.description)
+
+            # Use assessments to separate timeslices per actor
+            if activity.type == tc.ACTIVITY_TYPES['assessment']:
+                assessment_id = activity.id
+                milestones[actor] = assessment_id       # For every milestone:
+
+                # Keep track of all assessments in reverse chronological order as well
+                if not assessment_id in assessment_ids:
+                    transactions[assessment_id] = defaultdict(list) # verbs+objects /actor
+                    freq[assessment_id] = {0: defaultdict(int)}     # frequency of 1-pairs
+                    assessment_ids.append(assessment_id)
+            else:
+                assessment_id = milestones[actor]
+                if assessment_id == 'NO_ASSESSMENT':
+                    continue
+
+                statement_obj = activity.id
+                transactions[assessment_id][actor].append(statement_obj)
+                freq[assessment_id][0][(statement_obj,)] += 1
+    else:
+        print 'not using cache'
+
+        now = time.time()
+        statements = tc.getAllStatements()
+        print 'Time taken: {0:2g}'.format(time.time() - now)
+
+        # Loop over reverse chronological data
+        for statement in statements:
+            if statement['verb']['id'] not in verbs:
+                continue
+
+            actor = statement['actor']['mbox']     # TODO replace mbox by ID
+            name_description[statement['object']['id']] = \
+                    (statement['object']['definition']['name'],
+                     statement['object']['definition']['description'])
+
+            # Use assessments to separate timeslices per actor
+            if statement['object']['definition']['type'] == tc.ACTIVITY_TYPES['assessment']:
+                assessment_id = statement['object']['id']
+                milestones[actor] = assessment_id       # For every milestone:
+
+                # Keep track of all assessments in reverse chronological order as well
+                if not assessment_id in assessment_ids:
+                    transactions[assessment_id] = defaultdict(list) # verbs+objects /actor
+                    freq[assessment_id] = {0: defaultdict(int)}     # frequency of 1-pairs
+                    assessment_ids.append(assessment_id)
+            else:
+                assessment_id = milestones[actor]
+                if assessment_id == 'NO_ASSESSMENT':
+                    continue
+
+                statement_obj = statement['object']['id']
+                transactions[assessment_id][actor].append(statement_obj)
+                freq[assessment_id][0][(statement_obj,)] += 1
 
     # Use baskets as transactions and recommend
     rulebase = []
