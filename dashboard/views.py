@@ -104,12 +104,6 @@ def split_statements(statements):
     return result
 
 
-# TODO: Remove. This is just for testing
-def getallen(request):
-    return render(request, 'dashboard/getallen.html',
-                  {'host': request.get_host()})
-
-
 def barcode(request, default_width=170):
     """Return an svg representing progress of an individual vs the group."""
 
