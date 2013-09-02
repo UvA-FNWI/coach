@@ -250,7 +250,10 @@ def check_group(func):
                     return HttpResponse()
             # Second half of new pair
             else:
-                last_group = GroupAssignment.objects.last().group
+                try:
+                    last_group = GroupAssignment.objects.revers()[0].group
+                except:
+                    last_group = bool(random.choice(['A', 'B']))
                 if last_group == 'A':
                     ga = GroupAssignment(user=user, group='B')
                     ga.save()
