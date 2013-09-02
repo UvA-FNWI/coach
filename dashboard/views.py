@@ -296,8 +296,10 @@ def index(request, cached=True):
 
 
 def bootstrap_recommend(request, milestones):
+    max_recs = int(request.GET.get('max', False))
     return render(request, 'dashboard/bootstrap_recommend.html',
                   {'milestones': milestones,
+                   'max_recs': max_recs,
                    'host': request.get_host()})
 
 
