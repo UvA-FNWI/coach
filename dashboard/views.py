@@ -344,14 +344,15 @@ def get_recommendations(request, milestones, max_recs=False):
                              'score': score})
 
     # Normalise support
-    max_sup = max(map(lambda x: x['score'], recs))
-    for rec in recs:
-        rec['score'] /= max_sup
+    if len(recs) > 0:
+        max_sup = max(map(lambda x: x['score'], recs))
+        for rec in recs:
+            rec['score'] /= max_sup
 
-    recs.sort(key=lambda x: x['score'], reverse=True)
+        recs.sort(key=lambda x: x['score'], reverse=True)
 
-    if max_recs:
-        recs = recs[:max_recs]
+        if max_recs:
+            recs = recs[:max_recs]
 
     # Log Recommendations viewed
     email = request.GET.get('email', '')
