@@ -233,7 +233,7 @@ def check_group(func):
         except ObjectDoesNotExist:
             # First half of new pair
             if GroupAssignment.objects.count() % 2 == 0:
-                group = bool(random.choice(['A', 'B']))
+                group = random.choice(['A', 'B'])
                 if group == 'A':
                     ga = GroupAssignment(user=user, group='A')
                     ga.save()
@@ -245,9 +245,9 @@ def check_group(func):
             # Second half of new pair
             else:
                 try:
-                    last_group = GroupAssignment.objects.reverse()[0].group
+                    last_group = GroupAssignment.objects.order_by('-id')[0].group
                 except:
-                    last_group = bool(random.choice(['A', 'B']))
+                    last_group = random.choice(['A', 'B'])
                 if last_group == 'A':
                     ga = GroupAssignment(user=user, group='B')
                     ga.save()
