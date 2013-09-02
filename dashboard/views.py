@@ -104,12 +104,6 @@ def split_statements(statements):
     return result
 
 
-# TODO: Remove. This is just for testing
-def getallen(request):
-    return render(request, 'dashboard/getallen.html',
-                  {'host': request.get_host()})
-
-
 def barcode(request, default_width=170):
     """Return an svg representing progress of an individual vs the group."""
 
@@ -251,7 +245,7 @@ def check_group(func):
             # Second half of new pair
             else:
                 try:
-                    last_group = GroupAssignment.objects.revers()[0].group
+                    last_group = GroupAssignment.objects.reverse()[0].group
                 except:
                     last_group = bool(random.choice(['A', 'B']))
                 if last_group == 'A':

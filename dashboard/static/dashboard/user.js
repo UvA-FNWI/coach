@@ -42,7 +42,6 @@ var User = {
 	error_cb: function(error){ alert("Error: "+error.message); },
 	load: function(){
         gapi.client.setApiKey(apiKey);
-        window.setTimeout(User.login,1);
 	},
 	login: function(){
         gapi.auth.authorize(
