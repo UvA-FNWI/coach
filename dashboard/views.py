@@ -318,6 +318,7 @@ def get_recommendations(request, milestones, max_recs=False):
 
     # Exclude completed items from recommendations
     email = request.GET.get('email', DEBUG_USER['email'])
+    max_recs = int(request.GET.get('max', max_recs))
     seen_objs = Activity.objects.filter(user='mailto:%s' % (email,))
     ex_objs = seen_objs.exclude(verb=COMPLETED, value__gte=.8)
     ex = set(map(lambda x: x.activity, seen_objs))
@@ -365,6 +366,9 @@ def get_recommendations(request, milestones, max_recs=False):
 @transaction.commit_manually
 def generate_recommendations(request):
     from_cache = int(request.GET.get('c', False))
+    minsup = int(request.GET.get('minsup', 2))
+    minconf = int(request.GET.get('minconf', .3))
+    gamma = int(request.GET.get('gamma', .8))
     if from_cache:
         cache_activities(request)
         # TODO: proper data
