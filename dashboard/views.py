@@ -245,7 +245,7 @@ def check_group(func):
             # Second half of new pair
             else:
                 try:
-                    last_group = GroupAssignment.objects.revers()[0].group
+                    last_group = GroupAssignment.objects.reverse()[0].group
                 except:
                     last_group = bool(random.choice(['A', 'B']))
                 if last_group == 'A':
