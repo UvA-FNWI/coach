@@ -11,16 +11,16 @@
 		border-top-left-radius: 4px; border-top-right-radius: 4px;">
 		<ul id="main-nav" class="nav nav-tabs">
 			<li class="active">
-				<a data-toggle="tab" href="#assessments">Assessments</a>
+				<a data-toggle="tab" href="#assessments">Toetsen</a>
 			</li>
 			<li>
-				<a data-toggle="tab" href="#exercises">Exercises</a>
+				<a data-toggle="tab" href="#exercises">Oefeningen</a>
 			</li>
 			<li>
-				<a data-toggle="tab" href="#video">Video</a>
+				<a data-toggle="tab" href="#videos">Videos</a>
 			</li>
 			<li>
-				<a data-toggle="tab" href="#help">[?]</a>
+				<a data-toggle="tab" href="#help">[Uitleg]</a>
 			</li>
 		</ul>
 		<div style="padding: 0; margin: 5px; border-color: #EEEEEE; border-style:
@@ -92,9 +92,9 @@
 				{% endfor %}
 				</table>
 			</div>
-			<div class="tab-pane" id="video">
+			<div class="tab-pane" id="videos">
 				<script type="text/javascript">
-					$('a[href="video"]').click(function (e) {
+					$('a[href="videos"]').click(function (e) {
 							e.preventDefault();
 							$(this).tab('show');
 					})
@@ -113,8 +113,41 @@
 				{% endfor %}
 				</table>
 			</div>
-			<div class="tab-pane" id="help">
-				This tab will explain everything.
+			<div class="tab-pane" id="help" style='padding:5px'>
+				<h4>Toetsen</h4>
+				In de <i>Toetsen</i> tab zie je een overzicht van de toetsen die je
+				hebt gedaan in SOWISO. Per gemaakte toets is er een regel te zien. Op elke regel
+				staat aan de linkerkant in het blauw de naam van de toets en aan de
+				rechterkant in het grijs de score die je hebt behaalt. Je kan ook op de
+				naam van de toets klikken om naar de toets te gaan. Als je nog geen
+				toetsen hebt gedaan dan is deze tab leeg.
+				<h4>Oefeningen</h4>
+				In de <i>Oefeningen</i> tab zie je een overzicht van de oefeningen die
+				je hebt gedaan in SOWISO en iktel. Per gemaakte oefening is er een
+				regel te zien. Op elke regel staat in het blauw de naam van de
+				oefening, waar je op kunt klikken om naar de oefening te gaan, en er
+				staat mogelijk ook een groene lijn onder de naam van de oefening. Deze
+				groene lijn geeft aan hoe ver je bent gekomen in de oefening. De
+				oefeningen staan gesorteerd op de datum dat je er voor het laatst iets
+				mee hebt gedaan. Als je nog geen oefeningen hebt gemaakt dan is deze
+				tab leeg.
+				<h4>Videos</h4>
+				In de <i>Videos</i> tab zie je een overzicht van de videos die je hebt
+				bekeken op iktel. Per gekeken video is er een regel te zien. Op elke
+				regel staat in het blauw de naam van de video, waar je ook op kunt
+				klikken om naar de video te gaan. Als je nog geen videos hebt bekeken
+				dan is deze tab leeg.
+				<h4>Barcode</h4>
+				Onderaan de vier tabs zie je een rechthoek met verticale strepen, we
+				noemen dat de barcode. In de barcode kan je zien hoe jij er voor staat
+				ten op zichte van je medestudenten. Elk verticaal streepje staat voor
+				een student. Hoe meer een streepje naar rechts staat, hoe verder die
+				student is ten op zichte van de rest. Er is ook een grotere en dikkere
+				streep met een driehoekje aan weerszijden. Die streep ben jij. Als jouw
+				streep helemaal aan de rechterkant staat, dan loop je voor op de rest
+				van de groep. Als hij echter meer aan de linkerkant staat dan begin je
+				wat achter te lopen. De voortgang is gebaseerd op het totaal aantal
+				punten wat je op de toetsen hebt gescoord.
 			</div>
 		</div>
 
