@@ -6,13 +6,13 @@
 <!-- load User object -->
 <script src="/static/dashboard/user.js"></script>
 <script type="text/javascript">
-	// load function
+
+// load function
 function load_user(){
 	// Set callback for when email is retrieved
 	User.success_cb = function(){
-		$('#lightbox').remove();
 		$.get(
-				"http://{{ host }}?email="+User.email,
+				"?email="+User.email,
 				function(data){$('#coach').html(data)}
 			 );
 	}
