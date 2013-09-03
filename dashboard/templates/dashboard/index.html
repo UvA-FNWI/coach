@@ -1,10 +1,10 @@
 {% load staticfiles %}
 {% block content %}
 <div id="coach" >
-	<link href="{% static 'dashboard/bootstrap.min.css' %}" rel="stylesheet" media="screen">
-	<link href="{% static 'dashboard/navbar.css' %}" rel="stylesheet" media="screen">
-	<script src="{% static 'dashboard/jquery-2.0.3.min.js' %}"></script>
-	<script src="{% static 'dashboard/bootstrap.min.js' %}"></script>
+	<link href="http://{{ host }}{% static 'dashboard/bootstrap.min.css' %}" rel="stylesheet" media="screen">
+	<link href="http://{{ host }}{% static 'dashboard/navbar.css' %}" rel="stylesheet" media="screen">
+	<script src="http://{{ host }}{% static 'dashboard/jquery-2.0.3.min.js' %}"></script>
+	<script src="http://{{ host }}{% static 'dashboard/bootstrap.min.js' %}"></script>
 
   <div class="container" style="width: 300px; -webkit-box-shadow: -1px 2px 8px
 		#BBB; -moz-box-shadow: -1px 2px 8px #BBB; box-shadow: -1px 2px 8px #BBB;
@@ -25,7 +25,7 @@
 		</ul>
 		<div style="padding: 0; margin: 5px; border-color: #EEEEEE; border-style:
 			solid; border-width: 1px;">
-      <object data="barcode?email={{email}}&width=278" type="image/svg+xml" 
+			<object data="http://{{ host}}/barcode?email={{email}}&width=278" type="image/svg+xml" 
 				style="width: 100%; height: {{barcode_height}}px;"></object>
 		</div>
 

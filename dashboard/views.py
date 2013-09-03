@@ -30,10 +30,7 @@ ASSESSMENT = TinCan.ACTIVITY_TYPES['assessment']
 PROGRESS_T = "http://uva.nl/coach/progress"
 
 # To ensure iktel login
-PRE_URL = "https://www.google.com/accounts/ServiceLogin?service=ah" +\
-          "&passive=true&continue=https://appengine.google.com/_ah/" +\
-          "conflogin%3Fcontinue%3Dhttp://www.iktel.nl/postlogin%253F" +\
-          "continue%253D"
+IKTEL_URL_FORMAT = "http://www.iktel.nl/postlogin?continue=%s&login_hint=%s"
 
 BARCODE_HEIGHT = 35
 
@@ -205,10 +202,10 @@ def cache_activities(request):
     return HttpResponse()
 
 
-def fix_url(url):
+def fix_url(url, request):
     """Make sure the iktel lings go through the appengine login first."""
     if re.search('www.iktel.nl', url):
-        return PRE_URL + url
+        return IKTEL_URL_FORMAT % (url, request.GET.get('email'));
     return url
 
 
@@ -274,7 +271,7 @@ def index(request, cached=True):
         statements = parse_statements(tc_resp)
 
     for statement in statements:
-        statement['url'] = fix_url(statement['url'])
+        statement['url'] = fix_url(statement['url'],request)
 
     statements = split_statements(statements)
 
@@ -288,7 +285,8 @@ def index(request, cached=True):
         'email': email,
         'assignments': assignments,
         'exercises': exercises,
-        'video': video
+        'video': video,
+        'host': request.get_host()
     })
     response = HttpResponse(template.render(context))
     response['Access-Control-Allow-Origin'] = "*"
@@ -429,4 +427,4 @@ def track(request, defaulttarget='index.html'):
     event = LogEvent(type='C', user=user, data=target, context=context)
     event.save()
 
-    return redirect(fix_url(target))
+    return redirect(fix_url(target, request))

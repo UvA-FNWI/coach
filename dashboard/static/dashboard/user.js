@@ -39,22 +39,32 @@ var User = {
 	email: undefined,
 	scopes: 'https://www.googleapis.com/auth/userinfo.email',
 	success_cb: function(){},
-	error_cb: function(error){ alert("Error: "+error.message); },
-	load: function(){
+	error_cb: function(error){ alert("Something went wrong, please notify your teacher with the following message:\n "+error.message); },
+	load: function(auto){
         gapi.client.setApiKey(apiKey);
-        //window.setTimeout(User.login,0);
+		if(auto){
+			window.setTimeout(User.login,1);
+		}
 	},
-	login: function(){
+	login: function(cb){
+		if(!cb){
+			cb = User.force_login
+		}
         gapi.auth.authorize(
 			{
 				client_id: clientId,
 				scope: User.scopes,
 				immediate: true,
 			},
-			User.handle_login
+			cb
 		);
 	},
-	handle_login: function( authResult ){
+	try_login: function( authResult ){
+		if(authResult && !authResult.error){
+			User.fetch()
+		}
+	},
+	force_login: function( authResult ){
 		if(authResult && !authResult.error){
 			User.fetch()
 		} else {
@@ -65,7 +75,7 @@ var User = {
 					immediate: false,
 					hd: "student.uva.nl"
 				},
-				User.handle_login
+				User.force_login
 			);
 		}
 	},

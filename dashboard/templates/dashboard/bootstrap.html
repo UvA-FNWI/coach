@@ -12,12 +12,12 @@ function load_user(){
 	// Set callback for when email is retrieved
 	User.success_cb = function(){
 		$.get(
-				"?email="+User.email,
+				"/?email="+User.email,
 				function(data){$('#coach').html(data)}
 			 );
 	}
 	// init User object
-	User.load();
+	User.load(true);
 }
 </script>
 <!-- load Google API client, onload parameter must contain the name
