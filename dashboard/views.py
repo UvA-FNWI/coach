@@ -321,7 +321,7 @@ def get_recommendations(request, milestones, max_recs=False):
     max_recs = int(request.GET.get('max', max_recs))
     seen_objs = Activity.objects.filter(user='mailto:%s' % (email,))
     ex_objs = seen_objs.exclude(verb=COMPLETED, value__gte=.8)
-    ex = set(map(lambda x: x.activity, seen_objs))
+    ex = set(map(lambda x: x.activity, ex_objs))
 
     for milestone in milestones.split(','):
         tmp = rec_objs.filter(milestone=milestone)
@@ -352,7 +352,13 @@ def get_recommendations(request, milestones, max_recs=False):
     # Log Recommendations viewed
     email = request.GET.get('email', '')
     user = email
-    data = json.dumps(map(lambda x: x['url'], recs))
+    data = json.dumps({
+            "recs": map(lambda x: x['url'],recs),
+            "path": request.path,
+            "milestone_n": len(milestones.split(',')),
+            "milestones": milestones,
+            "seen_n": len(seen_objs),
+            "rec_objs_n": rec_objs.count()})
     event = LogEvent(type='V', user=user, data=data)
     event.save()
 
