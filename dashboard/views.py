@@ -290,6 +290,10 @@ def index(request, cached=True):
     })
     response = HttpResponse(template.render(context))
     response['Access-Control-Allow-Origin'] = "*"
+
+    event = LogEvent(type='D', user=email, data="{}")
+    event.save()
+
     return response
 
 
