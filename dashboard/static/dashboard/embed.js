@@ -3,7 +3,7 @@ function load_user(){
 	// Set callback for when email is retrieved
 	User.success_cb = function(){
 		$('#lightbox').remove();
-		document.getElementById('coach_f').src = "http://localhost:8000/bootstrap";
+		document.getElementById('coach_f').src = "http://coach.innovatievooronderwijs.nl/bootstrap";
 	}
 	// init User object
 	User.load();
