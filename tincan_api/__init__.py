@@ -13,6 +13,8 @@ import requests
 import json
 import urllib
 import uuid
+import pytz
+from datetime import datetime, timedelta
 
 
 class TinCan(object):
@@ -93,6 +95,49 @@ class TinCan(object):
             if self.logger is not None:
                 self.logger.error(e)
 
+    def dynamicIntervalStatementRetrieval(self, t1, dt):
+        """
+        Wrapper function for getFilteredStatements to handle a LRS that
+        timeouts quickly when the data stored in it is too big. It uses dynamic
+        time intervals to limit the data requested in order to retrieve the
+        data slowly bit by bit. The size of the bits (interval) is dynamically
+        altered bases on the result of the LRS. When a timeout occurs the
+        interval is halved, when an empty result is returned the timeout
+        doubles. It returns the cumulative list of statements between t1 and
+        now when the entire period was bridgeable with dynamic intervals. It
+        raises an Exception when the interval needs to be reduced to less then
+        a second. Typically the latter case would indicate a different problem.
+
+        @arg t1 Datetime object that indicates the begin of the period to be
+        retrieved
+        @arg dt Timedelta object that indicates the initial interval to be
+        tried
+        @return List of statements as returned by getFilteredStatements
+        """
+        t2 = datetime.now().replace(tzinfo=pytz.utc)
+        if t1.tzinfo is None:
+            t1.replace(tzinfo=pytz.utc)
+        min_dt = timedelta(seconds=1)
+        statements = []
+        while True:
+            since = t1.isoformat()
+            until = (t1+dt).isoformat()
+            r = self.getFilteredStatements({"since":since,"until":until},False)
+            if r == False:
+                if dt > min_dt*2:
+                    dt /= 2
+                else:
+                    raise Exception("dt %s too small, t1: %s" % (dt,t1))
+            elif r == []:
+                if t1+dt > t2:
+                    return statements
+                else:
+                    t1 += dt
+                    dt *= 2
+            else:
+                statements += r
+                t1 += dt
+
     def getAllStatements(self):
         ##Attempts to retrieve every TinCan Statement from the End point
         try:
@@ -104,7 +149,7 @@ class TinCan(object):
                                         auth=HTTPBasicAuth(self._userName, self._secret),
                                         headers={"Content-Type" : "application/json",
                                                          self.VERSIONHEADER : self.VERSION})
-                except ConnectionError as e:
+                except requests.ConnectionError as e:
                     if self.logger is not None:
                         print "Error getting statements."
                         self.logger.error(e)
@@ -120,17 +165,17 @@ class TinCan(object):
             if self.logger is not None:
                 self.logger.error(e)
 
-    def getFilteredStatements(self, inputDict):
+    def getFilteredStatements(self, inputDict, fail_safe):
         ##Attempts to retrieve every TinCan Statement from the End point
+        fail_safe = True if fail_safe is None else fail_safe
         queryObject = {}
         for key in ['result', 'agent', 'context', 'timestamp',
-                                'verb', 'object', 'since',
+                                'verb', 'object', 'since','until','limit',
                                 'stored', 'authority', 'version', 'attachments']:
             if key in inputDict:
                 queryObject[key] = inputDict[key]
 
         endpoint = self._endpoint
-        url = endpoint +"?"+ urllib.urlencode(queryObject)
         try:
             statements = []
             while endpoint is not None:
@@ -142,15 +187,15 @@ class TinCan(object):
                                              headers = {"Content-Type":"application/json",
                                                                  self.VERSIONHEADER:self.VERSION})
                     else:
-                        resp = requests.get(url,
+                        resp = requests.get(endpoint +"?"+urllib.urlencode(queryObject),
                                             auth = HTTPBasicAuth(self._userName,self._secret),
                                             headers = {"Content-Type":"application/json",
                                                              self.VERSIONHEADER:self.VERSION})
-                except ConnectionError as e:
+                except requests.ConnectionError as e:
                     if self.logger is not None:
                         print "Error getting statements."
                         self.logger.error(e)
-                    return statements
+                    return statements if fail_safe else False
                 try:
                     result = resp.json()
                     statements = statements + result["statements"]
@@ -159,7 +204,8 @@ class TinCan(object):
                     else:
                         endpoint = None
                 except Exception as e:
-                    print "Error decoding response:", e
+                    print "Error decoding response:", result
+                    return False
             return statements
         except IOError as e:
             if self.logger is not None:

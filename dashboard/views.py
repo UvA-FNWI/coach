@@ -8,9 +8,11 @@ from django.template import RequestContext, loader
 from recommendation import recommend
 from models import Activity, Recommendation, LogEvent, rand_id, GroupAssignment
 from tincan_api import TinCan
+from datetime import datetime, timedelta
 import random
 import json
 import re
+import pytz
 import dateutil.parser
 
 from pprint import pformat, pprint
@@ -154,35 +156,36 @@ def cache_activities(request):
     Save only latest completed actions and only progress for uncompleted items
     per user.
     """
+    # Dynamic interval retrieval settings
+    INTERVAL = timedelta(days=1)
+    EPOCH = datetime(2013,9,3,0,0,0,0,pytz.utc)
+
     # Find most recent date
     try:
-        most_recent_time = Activity.objects.latest('time').time
+        t1 = Activity.objects.latest('time').time
     except:
-        most_recent_time = None
+        t1 = EPOCH
 
     # Get new data
     tincan = TinCan(USERNAME, PASSWORD, ENDPOINT)
-    if most_recent_time:
-        tc_resp = tincan.getFilteredStatements({'since': most_recent_time})
-    else:
-        tc_resp = tincan.getAllStatements()
+    statements = tincan.dynamicIntervalStatementRetrieval(t1,INTERVAL)
 
-    for resp in tc_resp:
-        type = resp['object']['definition']['type']
-        user = resp['actor']['mbox']
-        activity = resp['object']['id']
-        verb = resp['verb']['id']
-        name = resp['object']['definition']['name']['en-US']
-        description = resp['object']['definition']['description']['en-US']
-        time = dateutil.parser.parse(resp['timestamp'])
+    for statement in statements:
+        type = statement['object']['definition']['type']
+        user = statement['actor']['mbox']
+        activity = statement['object']['id']
+        verb = statement['verb']['id']
+        name = statement['object']['definition']['name']['en-US']
+        description = statement['object']['definition']['description']['en-US']
+        time = dateutil.parser.parse(statement['timestamp'])
         try:
-            raw = resp['result']['score']['raw']
-            min = resp['result']['score']['min']
-            max = resp['result']['score']['max']
+            raw = statement['result']['score']['raw']
+            min = statement['result']['score']['min']
+            max = statement['result']['score']['max']
             value = 100 * (raw - min) / max
         except KeyError:
             try:
-                value = 100 * float(resp['result']['extensions'][PROGRESS_T])
+                value = 100 * float(statement['result']['extensions'][PROGRESS_T])
             except KeyError:
                 value = 0
         a, created = Activity.objects.get_or_create(user=user,
