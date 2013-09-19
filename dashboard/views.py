@@ -1,3 +1,10 @@
+import random
+import json
+import pytz
+import dateutil.parser
+from datetime import datetime, timedelta
+from pprint import pformat
+
 from django.http import HttpResponse
 from django.core.exceptions import ObjectDoesNotExist
 from django.shortcuts import render, redirect, get_object_or_404
@@ -5,213 +12,26 @@ from django.contrib.auth import authenticate, login
 from django.conf import settings
 from django.db import transaction
 from django.template import RequestContext, loader
+
+
+
+from models import Activity, Recommendation, LogEvent, GroupAssignment
 from recommendation import recommend
-from models import Activity, Recommendation, LogEvent, rand_id, GroupAssignment
 from tincan_api import TinCan
-from datetime import datetime, timedelta
-import random
-import json
-import re
-import pytz
-import dateutil.parser
+from helpers import *
 
-from pprint import pformat, pprint
-
-DEBUG_USER = {'email': 'm.cohen@sowiso.nl'}
-
-
-# Create tincan object
 USERNAME = settings.TINCAN['username']
 PASSWORD = settings.TINCAN['password']
 ENDPOINT = settings.TINCAN['endpoint']
-
 COMPLETED = TinCan.VERBS['completed']['id']
 ANSWERED = TinCan.VERBS['answered']['id']
-QUESTION = TinCan.ACTIVITY_TYPES['question']
-ASSESSMENT = TinCan.ACTIVITY_TYPES['assessment']
+
 PROGRESS_T = "http://uva.nl/coach/progress"
 
-# To ensure iktel login
-IKTEL_URL_FORMAT = "http://www.iktel.nl/postlogin?continue=%s&login_hint=%s"
-
 BARCODE_HEIGHT = 35
+DEBUG_USER = {'email': 'm.cohen@sowiso.nl'}
 
-
-def parse_statements(objects):
-    """Get data from statements necessary for displaying."""
-    r = {}
-    for s in objects:
-        try:
-            type = s['object']['definition']['type']
-        except KeyError:
-            type = ''
-        try:        # Assessment    - score
-            raw = s['result']['score']['raw']
-            min = s['result']['score']['min']
-            max = s['result']['score']['max']
-            value = 100 * (raw - min) / max
-        except KeyError:
-            try:    # Question      - result
-                value = float(s['result']['extensions'][PROGRESS_T]) * 100
-            except KeyError:
-                value = None
-        try:
-            verb_t = s['verb']['id']
-            d = s['object']['definition']
-            name = d['name']['en-US']
-            desc = d['description']['en-US']
-            url = s['object']['id']
-            if not verb_t == ANSWERED and ((url not in r) or
-                                           verb_t == COMPLETED):
-                r[url] = {'user': s['actor']['mbox'],
-                          'type': type,
-                          'url': url,
-                          'value': value,
-                          'name': name,
-                          'desc': desc,
-                          'id': rand_id()}
-        except KeyError as e:
-            print('Error:', e)
-    return r.values()
-
-
-def split_statements(statements):
-    """Split statements by type:
-        assignments
-        exercises
-        video
-        rest
-    """
-    result = {}
-    result['assignments'] = []
-    result['exercises'] = []
-    result['video'] = []
-    result['rest'] = []
-    for statement in statements:
-        try:
-            type = statement['type']
-        except KeyError:
-            continue
-        if type == TinCan.ACTIVITY_TYPES['assessment']:
-            result['assignments'].append(statement)
-        elif type == TinCan.ACTIVITY_TYPES['question']:
-            result['exercises'].append(statement)
-        elif type == TinCan.ACTIVITY_TYPES['media']:
-            result['video'].append(statement)
-        else:
-            result['rest'].append(statement)
-    return result
-
-
-def barcode(request, default_width=170):
-    """Return an svg representing progress of an individual vs the group."""
-
-    email = request.GET.get('email', DEBUG_USER['email'])
-    mbox = 'mailto:%s' % (email,)
-
-    width = int(request.GET.get('width', default_width))
-
-    all = Activity.objects
-    data = {'width': width, 'height': BARCODE_HEIGHT}
-
-    # Add values
-    people = {}
-    activities = all.filter(type=TinCan.ACTIVITY_TYPES['assessment'])
-    for activity in activities:
-        if activity.user in people:
-            people[activity.user] += min(80, activity.value)
-        else:
-            people[activity.user] = min(80, activity.value)
-    if mbox in people:
-        data['user'] = people[mbox]
-        del people[mbox]
-    else:
-        data['user'] = 0
-    data['people'] = people.values()
-
-    # Normalise
-    if len(people) > 0:
-        maximum = max(max(people.values()), data['user'])
-        data['user'] /= maximum
-        data['user'] *= width
-        data['user'] = int(data['user'])
-        for i, person in enumerate(data['people']):
-            data['people'][i] /= maximum
-            data['people'][i] *= width
-            data['people'][i] = int(data['people'][i])
-    else:
-        # if no other persons have been active
-        # then user is assumed to be in the lead.
-        # This is regardless if the user has done anything at all.
-        data['user'] = width
-
-    return render(request, 'dashboard/barcode.svg', data)
-
-
-# user+activity is unique, update
-@transaction.commit_manually
-def cache_activities(request):
-    """Create a cache of the Learning Record Store by getting all items since
-    the most recent one in the cache.
-    Save only latest completed actions and only progress for uncompleted items
-    per user.
-    """
-    # Dynamic interval retrieval settings
-    INTERVAL = timedelta(days=1)
-    EPOCH = datetime(2013,9,3,0,0,0,0,pytz.utc)
-
-    # Find most recent date
-    try:
-        t1 = Activity.objects.latest('time').time
-    except:
-        t1 = EPOCH
-
-    # Get new data
-    tincan = TinCan(USERNAME, PASSWORD, ENDPOINT)
-    statements = tincan.dynamicIntervalStatementRetrieval(t1,INTERVAL)
-
-    for statement in statements:
-        type = statement['object']['definition']['type']
-        user = statement['actor']['mbox']
-        activity = statement['object']['id']
-        verb = statement['verb']['id']
-        name = statement['object']['definition']['name']['en-US']
-        description = statement['object']['definition']['description']['en-US']
-        time = dateutil.parser.parse(statement['timestamp'])
-        try:
-            raw = statement['result']['score']['raw']
-            min = statement['result']['score']['min']
-            max = statement['result']['score']['max']
-            value = 100 * (raw - min) / max
-        except KeyError:
-            try:
-                value = 100 * float(statement['result']['extensions'][PROGRESS_T])
-            except KeyError:
-                value = 0
-        a, created = Activity.objects.get_or_create(user=user,
-                                                    activity=activity)
-        # Don't overwrite completed except with other completed events
-        # and only overwite with more recent timestamp
-        if created or (time > a.time and
-                       (verb == COMPLETED or a.verb != COMPLETED)):
-            a.verb = verb
-            a.type = type
-            a.value = value
-            a.name = name
-            a.description = description
-            a.time = time
-            a.save()
-    transaction.commit()
-    return HttpResponse()
-
-
-def fix_url(url, request):
-    """Make sure the iktel lings go through the appengine login first."""
-    if re.search('www.iktel.nl', url):
-        return IKTEL_URL_FORMAT % (url, request.GET.get('email'));
-    return url
-
-
+## Decorators
 def check_group(func):
     """Decorator to check the group for A/B testing.
     Users in group A see the dashboard and users in group B do not.
@@ -258,23 +78,74 @@ def check_group(func):
                     return func(*args, **kwargs)
     return inner
 
+## Bootstrap
+def bootstrap(request):
+    return render(request, 'dashboard/bootstrap.html',
+                  {'host': request.get_host()})
+
+def bootstrap_recommend(request, milestones):
+    max_recs = int(request.GET.get('max', False))
+    return render(request, 'dashboard/bootstrap_recommend.html',
+                  {'milestones': milestones,
+                   'max_recs': max_recs,
+                   'host': request.get_host()})
+
+## Interface
+@check_group
+def barcode(request, default_width=170):
+    """Return an svg representing progress of an individual vs the group."""
+
+    email = request.GET.get('email', DEBUG_USER['email'])
+    mbox = 'mailto:%s' % (email,)
+
+    width = int(request.GET.get('width', default_width))
+    data = {'width': width, 'height': BARCODE_HEIGHT}
+
+    # Add values
+    people = {}
+    activities = Activity.objects.all.filter(
+            type=TinCan.ACTIVITY_TYPES['assessment'])
+    for activity in activities:
+        if activity.user in people:
+            people[activity.user] += min(80, activity.value)
+        else:
+            people[activity.user] = min(80, activity.value)
+    if mbox in people:
+        data['user'] = people[mbox]
+        del people[mbox]
+    else:
+        data['user'] = 0
+    data['people'] = people.values()
+
+    # Normalise
+    if len(people) > 0:
+        maximum = max(max(people.values()), data['user'])
+        data['user'] /= maximum
+        data['user'] *= width
+        data['user'] = int(data['user'])
+        for i, person in enumerate(data['people']):
+            data['people'][i] /= maximum
+            data['people'][i] *= width
+            data['people'][i] = int(data['people'][i])
+    else:
+        # if no other persons have been active
+        # then user is assumed to be in the lead.
+            # This is regardless if the user has done anything at all.
+        data['user'] = width
+
+    return render(request, 'dashboard/barcode.svg', data)
 
 @check_group
-def index(request, cached=True):
+def index(request):
     email = request.GET.get('email', DEBUG_USER['email'])
     activities = Activity.objects
-    if cached:
-        statements = map(lambda x: Activity._dict(x),
-                         activities.filter(
-                             user="mailto:%s" % (email,)).order_by('-time'))
-    else:
-        tincan = TinCan(USERNAME, PASSWORD, ENDPOINT)
-        obj = {'agent': {'mbox': 'mailto:%s' % email}}
-        tc_resp = tincan.getFilteredStatements(obj)
-        statements = parse_statements(tc_resp)
+    statements = map(lambda x: x._dict(),
+                     activities.filter(
+                         user="mailto:%s" % (email,)).order_by('-time'))
+    statements = aggregate_statements(statements)
 
     for statement in statements:
-        statement['url'] = fix_url(statement['url'],request)
+        statement['activity'] = fix_url(statement['activity'],request)
 
     statements = split_statements(statements)
 
@@ -299,29 +170,10 @@ def index(request, cached=True):
 
     return response
 
-
-def bootstrap_recommend(request, milestones):
-    max_recs = int(request.GET.get('max', False))
-    return render(request, 'dashboard/bootstrap_recommend.html',
-                  {'milestones': milestones,
-                   'max_recs': max_recs,
-                   'host': request.get_host()})
-
-
-def bootstrap(request):
-    return render(request, 'dashboard/bootstrap.html',
-                  {'host': request.get_host()})
-
-
-def f_score(confidence, support, beta=1):
-    return (1 + beta ** 2) * ((confidence * support) /
-                              (beta ** 2 * confidence + support))
-
-
 @check_group
 def get_recommendations(request, milestones, max_recs=False):
     rec_objs = Recommendation.objects
-    recs = []
+    result = []
 
     # Exclude completed items from recommendations
     email = request.GET.get('email', DEBUG_USER['email'])
@@ -331,36 +183,36 @@ def get_recommendations(request, milestones, max_recs=False):
     ex = set(map(lambda x: x.activity, ex_objs))
 
     for milestone in milestones.split(','):
-        tmp = rec_objs.filter(milestone=milestone)
-        for rec in tmp:
+        recommendations = rec_objs.filter(milestone=milestone)
+        for rec in recommendations:
             if rec.url not in ex:
                 score = f_score(rec.confidence, rec.support, beta=1.5)
-                recs.append({'milestone': rec.milestone,
+                result.append({'milestone': rec.milestone,
                              'url': rec.url,
                              'id': rand_id(),
-                             'name': rec.get_name(),
-                             'desc': rec.get_desc(),
-                             'm_name': rec.get_m_name(),
+                             'name': rec.name,
+                             'desc': rec.description,
+                             'm_name': rec.m_name,
                              'confidence': rec.confidence,
                              'support': rec.support,
                              'score': score})
 
     # Normalise support
-    if len(recs) > 0:
-        max_sup = max(map(lambda x: x['score'], recs))
-        for rec in recs:
+    if len(result) > 0:
+        max_sup = max(map(lambda x: x['score'], result))
+        for rec in result:
             rec['score'] /= max_sup
 
-        recs.sort(key=lambda x: x['score'], reverse=True)
+        result.sort(key=lambda x: x['score'], reverse=True)
 
         if max_recs:
-            recs = recs[:max_recs]
+            result = result[:max_recs]
 
     # Log Recommendations viewed
     email = request.GET.get('email', '')
     user = email
     data = json.dumps({
-            "recs": map(lambda x: x['url'],recs),
+            "recs": map(lambda x: x['url'],result),
             "path": request.path,
             "milestone_n": len(milestones.split(',')),
             "milestones": milestones,
@@ -370,57 +222,103 @@ def get_recommendations(request, milestones, max_recs=False):
     event.save()
 
     return render(request, 'dashboard/recommend.html',
-                  {'recommendations': recs,
+                  {'recommendations': result,
                    'context': event.id,
                    'email': email,
                    'host': request.get_host()})
 
+## Background processes
+def cache_activities(request):
+    """Create a cache of the Learning Record Store by getting all items since
+    the most recent one in the cache.
+    """
+    # Dynamic interval retrieval settings
+    INTERVAL = timedelta(days=1)
+    EPOCH = datetime(2013,9,3,0,0,0,0,pytz.utc)
 
-@transaction.commit_manually
+    aggregate = request.GET.get("aggregate","0") == "0"
+
+    # Find most recent date
+    try:
+        t1 = Activity.objects.latest('time').time
+    except:
+        t1 = EPOCH
+
+    # Get new data
+    tincan = TinCan(USERNAME, PASSWORD, ENDPOINT)
+    statements = tincan.dynamicIntervalStatementRetrieval(t1,INTERVAL)
+    for statement in statements:
+        type = statement['object']['definition']['type']
+        user = statement['actor']['mbox']
+        activity = statement['object']['id']
+        verb = statement['verb']['id']
+        name = statement['object']['definition']['name']['en-US']
+        description = statement['object']['definition']['description']['en-US']
+        time = dateutil.parser.parse(statement['timestamp'])
+        try:
+            raw = statement['result']['score']['raw']
+            min = statement['result']['score']['min']
+            max = statement['result']['score']['max']
+            value = 100 * (raw - min) / max
+        except KeyError:
+            try:
+                value = 100 * float(statement['result']['extensions'][PROGRESS_T])
+            except KeyError:
+                value = 0
+        if aggregate:
+            a, created = Activity.objects.get_or_create(user=user,
+                                                        activity=activity)
+            # Don't overwrite completed except with other completed events
+            # and only overwite with more recent timestamp
+            if created or (time > a.time and
+                           (verb == COMPLETED or a.verb != COMPLETED)):
+                a.verb = verb
+                a.type = type
+                a.value = value
+                a.name = name
+                a.description = description
+                a.time = time
+                a.save()
+        else:
+            a, created = Activity.objects.get_or_create(user=user,
+                                                        verb=verb,
+                                                        activity=activity,
+                                                        time=time)
+            if created:
+                a.verb = verb
+                a.type = type
+                a.value = value
+                a.name = name
+                a.description = description
+                a.time = time
+                a.save()
+    return HttpResponse()
+
 def generate_recommendations(request):
-    from_cache = int(request.GET.get('c', False))
     minsup = int(request.GET.get('minsup', 2))
     minconf = int(request.GET.get('minconf', .3))
     gamma = int(request.GET.get('gamma', .8))
-    if from_cache:
-        cache_activities(request)
-        # TODO: proper data
-        activities = Activity.objects.filter()
-        recommendations, names = recommend(activities=activities,
-                                           recommendationfunction='trail',
-                                           minsup=2, minconf=.3, gamma=.8)
-    else:
-        recommendations, names = recommend(recommendationfunction='trail',
-                                           minsup=2, minconf=.3, gamma=.8)
+
+    # Mine recommendations
+    recommendations, names = recommend(minsup=2, minconf=.3, gamma=.8)
+
     # Add recommendations to database
     Recommendation.objects.all().delete()
-    i = 0
     for r in recommendations:
         item_hash = hash(r['antecedent'])
-        confidence = r['confidence']
-        support = r['support']
-        milestone = r['milestone']
-        # Store each recommendation separately
-        url = r['consequent']
-        name = names[url][0]
-        description = names[url][1]
-        i += 1
         rec = Recommendation(item_hash=item_hash,
-                             confidence=confidence,
-                             support=support,
-                             milestone=milestone,
-                             m_name=names[milestone],
-                             name=name,
-                             url=url,
-                             description=description)
+                             confidence=r['confidence'],
+                             support=r['support'],
+                             milestone=r['milestone'],
+                             m_name=names[r['milestone']][0],
+                             name=names[r['consequent']][0],
+                             url=r['consequent'],
+                             description=names[r['consequent']][1])
         rec.save()
 
     event = LogEvent(type='G', user='all', data=json.dumps(recommendations))
     event.save()
-
-    transaction.commit()
     return HttpResponse(pformat(recommendations))
-
 
 def track(request, defaulttarget='index.html'):
     """Track user clicks so that we may be able to improve recommendation

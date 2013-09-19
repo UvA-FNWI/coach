@@ -2,9 +2,9 @@
 Collects data from the learning record store, from which recommendations can
 be made using a prespecified algorithm and corresponding settings.
 
-Auth: Auke Wiggers & Steven Laan
+Auth: Auke Wiggers & Steven Laan & Sander Latour
 Date: 30-07-2013
-Last Modified: 29-08-2013
+Last Modified: 18-09-2013
 '''
 
 import sys
@@ -20,7 +20,9 @@ import apriori
 import trail
 import time
 
-def recommend(recommendationfunction='apriori', inputverbs=None, **kwargs):
+from dashboard.models import Activity
+
+def recommend(recommendationfunction='trail', inputverbs=None, **kwargs):
     '''Generate new recommendation rules for every assignment that is of some
     importance, based on completed and launched media, questions, assessments.
 
@@ -37,16 +39,12 @@ def recommend(recommendationfunction='apriori', inputverbs=None, **kwargs):
       1. Top X will not be altered, based on people submitted/threshold conf/sup
 
     '''
-    use_cache = 'activities' in kwargs
 
-    tc = TinCan(settings.TINCAN['username'],
-                settings.TINCAN['password'],
-                settings.TINCAN['endpoint'])
     # By default, get all info from users who completed
     if inputverbs:
-        verbs = [tc.VERBS[verb]['id'] for verb in inputverbs]
+        verbs = [TinCan.VERBS[verb]['id'] for verb in inputverbs]
     else:
-        verbs = [tc.VERBS['completed']['id']]
+        verbs = [TinCan.VERBS['completed']['id']]
     max_consequent_size = kwargs['max_consequent_size'] if \
             'max_consequent_size' in kwargs else 1
     verbose = kwargs['verbose'] if 'verbose' in kwargs else False
@@ -57,74 +55,34 @@ def recommend(recommendationfunction='apriori', inputverbs=None, **kwargs):
     freq = dict()
     name_description = dict()
 
-    if use_cache:
-        print 'using cache'
-        activities = kwargs['activities']
-        # FIXME use cached activities, way faster, but differently formatted
-        # Loop over reverse chronological data
-        for activity in activities:
-            if activity.verb not in verbs:
+    activities = Activity.objects.all()
+    for activity in activities:
+        if activity.verb not in verbs:
+            continue
+        actor = activity.user     # TODO replace mbox by ID
+        name_description[activity.activity] = \
+                (activity.name,
+                 activity.description)
+
+        # Use assessments to separate timeslices per actor
+        if activity.type == TinCan.ACTIVITY_TYPES['assessment']:
+            assessment_id = activity.activity
+            milestones[actor] = assessment_id       # For every milestone:
+
+            # Keep track of all assessments in reverse chronological order as well
+            if not assessment_id in assessment_ids:
+                transactions[assessment_id] = defaultdict(list) # verbs+objects /actor
+                freq[assessment_id] = {0: defaultdict(int)}     # frequency of 1-pairs
+                assessment_ids.append(assessment_id)
+        else:
+            assessment_id = milestones[actor]
+            if assessment_id == 'NO_ASSESSMENT':
                 continue
 
-            actor = activity.user     # TODO replace mbox by ID
-            name_description[activity.activity] = \
-                    (activity.name,
-                     activity.description)
-
-            # Use assessments to separate timeslices per actor
-            if activity.type == tc.ACTIVITY_TYPES['assessment']:
-                assessment_id = activity.activity
-                milestones[actor] = assessment_id       # For every milestone:
-
-                # Keep track of all assessments in reverse chronological order as well
-                if not assessment_id in assessment_ids:
-                    transactions[assessment_id] = defaultdict(list) # verbs+objects /actor
-                    freq[assessment_id] = {0: defaultdict(int)}     # frequency of 1-pairs
-                    assessment_ids.append(assessment_id)
-            else:
-                assessment_id = milestones[actor]
-                if assessment_id == 'NO_ASSESSMENT':
-                    continue
-    
-                value = activity.value if activity.verb == tc.VERBS['progressed']['id'] else 1.0
-                statement_obj = activity.activity
-                transactions[assessment_id][actor].append((statement_obj, value))
-                freq[assessment_id][0][(statement_obj,)] += 1
-    else:
-        print 'not using cache'
-
-        now = time.time()
-        statements = tc.getAllStatements()
-        print 'Time taken: {0:2g}'.format(time.time() - now)
-
-        # Loop over reverse chronological data
-        for statement in statements:
-            if statement['verb']['id'] not in verbs:
-                continue
-
-            actor = statement['actor']['mbox']     # TODO replace mbox by ID
-            name_description[statement['object']['id']] = \
-                    (statement['object']['definition']['name'],
-                     statement['object']['definition']['description'])
-
-            # Use assessments to separate timeslices per actor
-            if statement['object']['definition']['type'] == tc.ACTIVITY_TYPES['assessment']:
-                assessment_id = statement['object']['id']
-                milestones[actor] = assessment_id       # For every milestone:
-
-                # Keep track of all assessments in reverse chronological order as well
-                if not assessment_id in assessment_ids:
-                    transactions[assessment_id] = defaultdict(list) # verbs+objects /actor
-                    freq[assessment_id] = {0: defaultdict(int)}     # frequency of 1-pairs
-                    assessment_ids.append(assessment_id)
-            else:
-                assessment_id = milestones[actor]
-                if assessment_id == 'NO_ASSESSMENT':
-                    continue
-                value = statement['result']['extensions']['http://uva.nl/coach/progress'] if statement['verb']['id'] == tc.VERBS['progressed']['id'] else 1.0
-                statement_obj = statement['object']['id']
-                transactions[assessment_id][actor].append((statement_obj, value))
-                freq[assessment_id][0][(statement_obj,)] += 1
+            value = activity.value if activity.verb == TinCan.VERBS['progressed']['id'] else 1.0
+            statement_obj = activity.activity
+            transactions[assessment_id][actor].append((statement_obj, value))
+            freq[assessment_id][0][(statement_obj,)] += 1
 
     # Use baskets as transactions and recommend
     rulebase = []
@@ -133,12 +91,12 @@ def recommend(recommendationfunction='apriori', inputverbs=None, **kwargs):
         L = freq[assessment_id]
 
         rules = []
+        print 'Generating rules for assessment ', assessment_id
         if recommendationfunction == 'apriori':
             # TODO choose between apriori / TID / (hybrid)
             minsup = kwargs['minsup']
             minconf = kwargs['minconf']
 
-            print 'Generating rules for assessment ', assessment_id
             rules = apriori.generate_rules(apriori.apriori, D, L, minsup,
                                            minconf, max_consequent_size,
                                            verbose=verbose, veryverbose=False)

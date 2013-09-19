@@ -1,14 +1,6 @@
 from django.db import models
-import random
-import string
 import ast
-
-
-def rand_id():
-    """Generate a random ID for use in html DOM elements."""
-    return ''.join(random.choice(string.ascii_uppercase + string.digits)
-                   for x in range(10))
-
+from helpers import rand_id
 
 class Recommendation(models.Model):
     item_hash = models.BigIntegerField()
@@ -20,19 +12,6 @@ class Recommendation(models.Model):
     confidence = models.FloatField()
     support = models.IntegerField()
     timestamp = models.DateTimeField(auto_now=True)
-
-
-    def get_name(self):
-        return ast.literal_eval(self.name).values()[0]
-
-    def get_desc(self):
-        return ast.literal_eval(self.description).values()[0]
-
-    def get_m_name(self):
-        return ast.literal_eval(self.m_name)[0].values()[0]
-
-    def get_m_desc(self):
-        return ast.literal_eval(self.m_name)[1].values()[0]
 
     def __unicode__(self):
         return self.name
@@ -56,10 +35,11 @@ class Activity(models.Model):
         return {'user': self.user,
                 'type': self.type,
                 'verb': self.verb,
-                'url': self.activity,
+                'activity': self.activity,
                 'value': self.value,
                 'name': self.name,
                 'desc': self.description,
+                'time': self.time,
                 'id': rand_id()}
 
     def __unicode__(self):
