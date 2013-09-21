@@ -12,26 +12,51 @@ from django.contrib.auth import authenticate, login
 from django.conf import settings
 from django.db import transaction
 from django.template import RequestContext, loader
-
-
+from django.db.models import Q
 
 from models import Activity, Recommendation, LogEvent, GroupAssignment
 from recommendation import recommend
 from tincan_api import TinCan
 from helpers import *
 
+# Fetch TinCan credentials from settings
 USERNAME = settings.TINCAN['username']
 PASSWORD = settings.TINCAN['password']
 ENDPOINT = settings.TINCAN['endpoint']
-COMPLETED = TinCan.VERBS['completed']['id']
-ANSWERED = TinCan.VERBS['answered']['id']
 
+# Reference to TinCan verbs
+COMPLETED = TinCan.VERBS['completed']['id']
+PROGRESSED = TinCan.VERBS['progressed']['id']
+
+# Reference to TinCan activity types
+ASSESSMENT = TinCan.ACTIVITY_TYPES['assessment']
+MEDIA = TinCan.ACTIVITY_TYPES['media']
+QUESTION = TinCan.ACTIVITY_TYPES['question']
+
+# Reference to progress URI in result/extension
 PROGRESS_T = "http://uva.nl/coach/progress"
 
+# Default barcode height
 BARCODE_HEIGHT = 35
-DEBUG_USER = {'email': 'm.cohen@sowiso.nl'}
 
 ## Decorators
+def identity_required(func):
+    def inner(request, *args, **kwargs):
+        # Fetch email from GET paramaters if present and store in session.
+        email = request.GET.get('email',None)
+        if email is not None:
+            request.session['user'] = "mailto:%s" % (email,)
+
+        # Fetch user from session
+        user = request.session.get('user',None)
+
+        # If no user is specified, show information on how to login
+        if user is None:
+            return render(request, 'dashboard/loginfirst.html',{})
+        else:
+            return func(request, *args, **kwargs)
+    return inner
+
 def check_group(func):
     """Decorator to check the group for A/B testing.
     Users in group A see the dashboard and users in group B do not.
@@ -39,30 +64,33 @@ def check_group(func):
     at most 1 in size. If both groups are the same size, the group will be
     assigned pseudorandomly.
     """
-    def inner(*args, **kwargs):
-        email = args[0].GET.get('email', '')
-        user = email
-        # Existing user
+    def inner(request, *args, **kwargs):
+        # Fetch user from session
+        user = request.session.get('user',None)
+
+        # Case 1: Existing user
         try:
             assignment = GroupAssignment.objects.get(user=user)
             if assignment.group == 'A':
-                return func(*args, **kwargs)
+                return func(request, *args, **kwargs)
             else:
                 return HttpResponse()
-        # New user
+        # Case 2: New user
         except ObjectDoesNotExist:
-            # First half of new pair
+            # Case 2a: First half of new pair,
+            #          randomly pick A or B for this user.
             if GroupAssignment.objects.count() % 2 == 0:
                 group = random.choice(['A', 'B'])
                 if group == 'A':
                     ga = GroupAssignment(user=user, group='A')
                     ga.save()
-                    return func(*args, **kwargs)
+                    return func(request, *args, **kwargs)
                 else:
                     ga = GroupAssignment(user=user, group='B')
                     ga.save()
                     return HttpResponse()
-            # Second half of new pair
+            # Case 2b: Second half of new pair,
+            #          choose the group that was not previously chosen.
             else:
                 try:
                     last_group = GroupAssignment.objects.order_by('-id')[0].group
@@ -75,7 +103,7 @@ def check_group(func):
                 else:
                     ga = GroupAssignment(user=user, group='A')
                     ga.save()
-                    return func(*args, **kwargs)
+                    return func(request, *args, **kwargs)
     return inner
 
 ## Bootstrap
@@ -91,35 +119,34 @@ def bootstrap_recommend(request, milestones):
                    'host': request.get_host()})
 
 ## Interface
+@identity_required
 @check_group
 def barcode(request, default_width=170):
     """Return an svg representing progress of an individual vs the group."""
-
-    email = request.GET.get('email', DEBUG_USER['email'])
-    mbox = 'mailto:%s' % (email,)
+    # Fetch user from session
+    user = request.session.get('user',None)
 
     width = int(request.GET.get('width', default_width))
     data = {'width': width, 'height': BARCODE_HEIGHT}
 
     # Add values
-    people = {}
-    activities = Activity.objects.all.filter(
-            type=TinCan.ACTIVITY_TYPES['assessment'])
+    markers = {}
+    activities = Activity.objects.filter(type=ASSESSMENT)
     for activity in activities:
-        if activity.user in people:
-            people[activity.user] += min(80, activity.value)
+        if activity.user in markers:
+            markers[activity.user] += min(80, activity.value)
         else:
-            people[activity.user] = min(80, activity.value)
-    if mbox in people:
-        data['user'] = people[mbox]
-        del people[mbox]
+            markers[activity.user] = min(80, activity.value)
+    if user in markers:
+        data['user'] = markers[user]
+        del markers[user]
     else:
         data['user'] = 0
-    data['people'] = people.values()
+    data['people'] = markers.values()
 
     # Normalise
-    if len(people) > 0:
-        maximum = max(max(people.values()), data['user'])
+    if len(markers) > 0:
+        maximum = max(max(data['people']), data['user'])
         data['user'] /= maximum
         data['user'] *= width
         data['user'] = int(data['user'])
@@ -135,13 +162,16 @@ def barcode(request, default_width=170):
 
     return render(request, 'dashboard/barcode.svg', data)
 
+@identity_required
 @check_group
 def index(request):
-    email = request.GET.get('email', DEBUG_USER['email'])
+    # Fetch user from session
+    user = request.session.get('user',None)
+
     activities = Activity.objects
     statements = map(lambda x: x._dict(),
                      activities.filter(
-                         user="mailto:%s" % (email,)).order_by('-time'))
+                         user=user).order_by('-time'))
     statements = aggregate_statements(statements)
 
     for statement in statements:
@@ -156,7 +186,6 @@ def index(request):
     template = loader.get_template('dashboard/index.html')
     context = RequestContext(request, {
         'barcode_height': BARCODE_HEIGHT,
-        'email': email,
         'assignments': assignments,
         'exercises': exercises,
         'video': video,
@@ -165,37 +194,48 @@ def index(request):
     response = HttpResponse(template.render(context))
     response['Access-Control-Allow-Origin'] = "*"
 
-    event = LogEvent(type='D', user=email, data="{}")
+    event = LogEvent(type='D', user=user, data="{}")
     event.save()
 
     return response
 
+@identity_required
 @check_group
 def get_recommendations(request, milestones, max_recs=False):
+    # Fetch user from session
+    user = request.session.get('user',None)
+
     rec_objs = Recommendation.objects
     result = []
 
-    # Exclude completed items from recommendations
-    email = request.GET.get('email', DEBUG_USER['email'])
+    # Get maximum recommendations to be showed
     max_recs = int(request.GET.get('max', max_recs))
-    seen_objs = Activity.objects.filter(user='mailto:%s' % (email,))
-    ex_objs = seen_objs.exclude(verb=COMPLETED, value__gte=.8)
-    ex = set(map(lambda x: x.activity, ex_objs))
+
+    # TODO: CHECK IS THIS OK?
+    # Create exclude set of completed items
+    #  these should not be recommended.
+    exclude = Activity.objects.filter(
+        Q(verb=COMPLETED) | Q(verb=PROGRESSED),
+        value__gte=80,
+        user=user
+    )
+    exclude = set(map(lambda x: x.activity, exclude))
 
     for milestone in milestones.split(','):
-        recommendations = rec_objs.filter(milestone=milestone)
-        for rec in recommendations:
-            if rec.url not in ex:
-                score = f_score(rec.confidence, rec.support, beta=1.5)
-                result.append({'milestone': rec.milestone,
-                             'url': rec.url,
-                             'id': rand_id(),
-                             'name': rec.name,
-                             'desc': rec.description,
-                             'm_name': rec.m_name,
-                             'confidence': rec.confidence,
-                             'support': rec.support,
-                             'score': score})
+        if milestone not in exclude:
+            recommendations = rec_objs.filter(milestone=milestone)
+            for rec in recommendations:
+                if rec.url not in exclude:
+                    score = f_score(rec.confidence, rec.support, beta=1.5)
+                    result.append({'milestone': milestone,
+                                 'url': rec.url,
+                                 'id': rand_id(),
+                                 'name': rec.name,
+                                 'desc': rec.description,
+                                 'm_name': rec.m_name,
+                                 'confidence': rec.confidence,
+                                 'support': rec.support,
+                                 'score': score})
 
     # Normalise support
     if len(result) > 0:
@@ -208,24 +248,21 @@ def get_recommendations(request, milestones, max_recs=False):
         if max_recs:
             result = result[:max_recs]
 
-    # Log Recommendations viewed
-    email = request.GET.get('email', '')
-    user = email
-    data = json.dumps({
-            "recs": map(lambda x: x['url'],result),
-            "path": request.path,
-            "milestone_n": len(milestones.split(',')),
-            "milestones": milestones,
-            "seen_n": len(seen_objs),
-            "rec_objs_n": rec_objs.count()})
-    event = LogEvent(type='V', user=user, data=data)
-    event.save()
+        # Log Recommendations viewed
+        data = json.dumps({
+                "recs": map(lambda x: x['url'],result),
+                "path": request.path,
+                "milestone_n": len(milestones.split(',')),
+                "milestones": milestones})
+        event = LogEvent(type='V', user=user, data=data)
+        event.save()
 
-    return render(request, 'dashboard/recommend.html',
+        return render(request, 'dashboard/recommend.html',
                   {'recommendations': result,
                    'context': event.id,
-                   'email': email,
                    'host': request.get_host()})
+    else:
+        return HttpResponse()
 
 ## Background processes
 def cache_activities(request):
@@ -236,7 +273,9 @@ def cache_activities(request):
     INTERVAL = timedelta(days=1)
     EPOCH = datetime(2013,9,3,0,0,0,0,pytz.utc)
 
-    aggregate = request.GET.get("aggregate","0") == "0"
+    # Set aggregate to True if events concerning the same activity-person
+    # should be aggregated into one row. This has impact for recommendations.
+    aggregate = False
 
     # Find most recent date
     try:
@@ -320,22 +359,28 @@ def generate_recommendations(request):
     event.save()
     return HttpResponse(pformat(recommendations))
 
+@identity_required
 def track(request, defaulttarget='index.html'):
     """Track user clicks so that we may be able to improve recommendation
     relevance in the future.
     """
-    target = request.GET.get('target', defaulttarget)
-    context = int(request.GET.get('context', ''))
-    email = request.GET.get('email', '')
-    user = email
+    # Fetch user from session
+    user = request.session.get('user',None)
 
-    try:
-        context = LogEvent.objects.get(pk=context)
-    except LogEvent.DoesNotExist:
-        #do something
-        pass
+    # Fetch target URL from GET parameters
+    target = request.GET.get('target', defaulttarget)
+
+    # Fetch context log id from GET paramaters
+    context = request.GET.get('context', None)
+
+    if context is not None:
+        try:
+            context = LogEvent.objects.get(pk=int(context))
+        except LogEvent.DoesNotExist:
+            context = None
 
     event = LogEvent(type='C', user=user, data=target, context=context)
     event.save()
 
     return redirect(fix_url(target, request))
+

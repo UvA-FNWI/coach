@@ -9,7 +9,7 @@
   <div class="container" style="width: 300px; -webkit-box-shadow: -1px 2px 8px
 		#BBB; -moz-box-shadow: -1px 2px 8px #BBB; box-shadow: -1px 2px 8px #BBB;
 		border-top-left-radius: 4px; border-top-right-radius: 4px;">
-		<h3 style='margin:5px'>Did you do...</h3>
+		<h4 style='margin:5px'>Have you tried...</h4>
 		<div class="container">
 			<table class="table table-condensed table-hover">
 			{% for r in recommendations %}
@@ -19,9 +19,9 @@
 							 data-animation="false"
 							 data-original-title="{{ r.desc }}"
 							 id="{{ r.id }}"
-							 href="http://{{ host }}/track?email={{ email }}&context={{ context }}&target={{ r.url }}"
+							 href="http://{{ host }}/track?context={{ context }}&target={{ r.url }}"
 							 target="_blank" >{{ r.name }}</a><br />
-						<small class="text-muted">Recommended for: <a href="{{ m.milestone }}">
+						<small class="text-muted">Recommended for: <a href="{{ r.milestone }}">
 							{{ r.m_name }}</a></small>
 					  <!--
 						<small class="pull-right text-muted">c: {{ r.confidence|floatformat }},
