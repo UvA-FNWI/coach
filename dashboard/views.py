@@ -4,6 +4,7 @@ import pytz
 import dateutil.parser
 from datetime import datetime, timedelta
 from pprint import pformat
+from hashlib import md5
 
 from django.http import HttpResponse
 from django.core.exceptions import ObjectDoesNotExist
@@ -43,9 +44,19 @@ BARCODE_HEIGHT = 35
 def identity_required(func):
     def inner(request, *args, **kwargs):
         # Fetch email from GET paramaters if present and store in session.
+        paramlist = request.GET.get('paramlist',None)
         email = request.GET.get('email',None)
-        if email is not None:
-            request.session['user'] = "mailto:%s" % (email,)
+        param_hash = request.GET.get('hash',None)
+        if paramlist is not None:
+            hash_contents = []
+            for param in paramlist.split(","):
+                if param == "pw":
+                    hash_contents.append(settings.AUTHENTICATION_SECRET)
+                else:
+                    hash_contents.append(request.GET.get(param,""))
+            hash_string = md5(",".join(hash_contents)).hexdigest().upper()
+            if hash_string == param_hash and email is not None:
+                request.session['user'] = "mailto:%s" % (email,)
 
         # Fetch user from session
         user = request.session.get('user',None)
