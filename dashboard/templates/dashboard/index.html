@@ -25,7 +25,7 @@
 		</ul>
 		<div style="padding: 0; margin: 5px; border-color: #EEEEEE; border-style:
 			solid; border-width: 1px;">
-			<object data="http://{{ host}}/barcode?email={{email}}&width=278" type="image/svg+xml" 
+			<object data="http://{{ host}}/barcode?width=278" type="image/svg+xml" 
 				style="width: 100%; height: {{barcode_height}}px;"></object>
 		</div>
 
@@ -49,7 +49,7 @@
 								 data-animation="false"
 								 data-original-title="{{ s.desc }}"
 								 id="{{ s.id }}"
-								 href="{{ s.url }}"
+								 href="{{ s.activity }}"
 								 style="width:250px; display:block; float:left;"
 								 target="_blank" >{{ s.name }}</a>
 							{% if not s.value == None %}
@@ -79,14 +79,14 @@
 					{% endif %}
 						<td>
 							<a data-toggle="tooltip" data-animation="false" data-original-title="{{ s.desc }}"
-								id="{{ s.id }}" href="{{ s.url }}" target="_blank" >{{ s.name }}</a><br />
+								id="{{ s.id }}" href="{{ s.activity }}" target="_blank" >{{ s.name }}</a><br />
 							<script type="text/javascript">
 								$('#{{ s.id }}').tooltip();
 							</script>
-							{% if s.value %}
+							{% if s.value < 2 %}
+							<div style="height: 3px; background-color: 22BB55; width: 2%;" />
+              {% else %}
 							<div style="height: 3px; background-color: 22BB55; width: {{ s.value }}%;" />
-							{% elif s.verb == "http://adlnet.gov/expapi/verbs/completed" %}
-							<div style="height: 3px; background-color: 22BB55; width: 100%;" />
 							{% endif %}
 						</td>
 					<tr>
@@ -105,7 +105,7 @@
 					<tr class="">
 						<td>
 							<a data-toggle="tooltip" data-animation="false" data-original-title="{{ s.desc }}"
-								id="{{ s.id }}" href="{{ s.url }}" target="_blank" >{{ s.name }}</a><br />
+								id="{{ s.id }}" href="{{ s.activity }}" target="_blank" >{{ s.name }}</a><br />
 							<script type="text/javascript">
 								$('#{{ s.id }}').tooltip();
 							</script>
