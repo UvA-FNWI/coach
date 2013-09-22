@@ -177,6 +177,9 @@ def index(request):
     # Fetch user from session
     user = request.session.get('user', None)
 
+    # Fetch desired width of the dashboard
+    width = request.GET.get("width",300);
+
     activities = Activity.objects.filter(user=user).order_by('-time')
     statements = map(lambda x: x._dict(), activities)
     statements = aggregate_statements(statements)
@@ -193,6 +196,7 @@ def index(request):
 
     template = loader.get_template('dashboard/index.html')
     context = RequestContext(request, {
+        'width': width,
         'barcode_height': BARCODE_HEIGHT,
         'assignments': assignments,
         'exercises': exercises,

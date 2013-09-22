@@ -6,7 +6,7 @@
 	<script src="http://{{ host }}{% static 'dashboard/jquery-2.0.3.min.js' %}"></script>
 	<script src="http://{{ host }}{% static 'dashboard/bootstrap.min.js' %}"></script>
 
-  <div class="container" style="width: 300px; -webkit-box-shadow: -1px 2px 8px
+  <div class="container" style="width: {{ width }}px; -webkit-box-shadow: -1px 2px 8px
 		#BBB; -moz-box-shadow: -1px 2px 8px #BBB; box-shadow: -1px 2px 8px #BBB;
 		border-top-left-radius: 4px; border-top-right-radius: 4px;">
 		<ul id="main-nav" class="nav nav-tabs">
@@ -25,7 +25,7 @@
 		</ul>
 		<div style="padding: 0; margin: 5px; border-color: #EEEEEE; border-style:
 			solid; border-width: 1px;">
-			<object data="http://{{ host}}/barcode?width=278" type="image/svg+xml" 
+      <object data="http://{{ host}}/barcode?width={{ width|add:"-22" }}" type="image/svg+xml" 
 				style="width: 100%; height: {{barcode_height}}px;"></object>
 		</div>
 
@@ -50,7 +50,7 @@
 								 data-original-title="{{ s.desc }}"
 								 id="{{ s.id }}"
 								 href="{{ s.activity }}"
-								 style="width:250px; display:block; float:left;"
+                 style="width:{{ width|add:"-50" }}px; display:block; float:left;"
 								 target="_blank" >{{ s.name }}</a>
 							{% if not s.value == None %}
 							<small class="pull-right text-muted">{{ s.value|floatformat }}%</small>
