@@ -1,11 +1,10 @@
 from django.db import models
-import ast
 from helpers import rand_id
 
 class Recommendation(models.Model):
-    item_hash = models.BigIntegerField()
+    antecedent_hash = models.BigIntegerField()
     milestone = models.URLField()
-    url = models.URLField()
+    consequent = models.URLField()
     name = models.CharField(max_length=255)
     m_name = models.CharField(max_length=255)
     description = models.CharField(max_length=255)
