@@ -34,7 +34,7 @@ def score(D, gamma = 0.9):
                 added_dict[cons][item] += count_dict[item] - 1
 
     for trail in D.itervalues():
-        trail_list = list(reversed(trail))
+        trail_list = list(trail)
 
         for i, (cons, value) in enumerate(trail_list):
             update(trail_list[i+1:], cons)

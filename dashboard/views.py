@@ -8,10 +8,8 @@ from hashlib import md5
 
 from django.http import HttpResponse
 from django.core.exceptions import ObjectDoesNotExist
-from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth import authenticate, login
+from django.shortcuts import render, redirect
 from django.conf import settings
-from django.db import transaction
 from django.template import RequestContext, loader
 from django.db.models import Q
 
@@ -44,26 +42,26 @@ BARCODE_HEIGHT = 35
 def identity_required(func):
     def inner(request, *args, **kwargs):
         # Fetch email from GET paramaters if present and store in session.
-        paramlist = request.GET.get('paramlist',None)
-        email = request.GET.get('email',None)
-        param_hash = request.GET.get('hash',None)
+        paramlist = request.GET.get('paramlist', None)
+        email = request.GET.get('email', None)
+        param_hash = request.GET.get('hash', None)
         if paramlist is not None:
             hash_contents = []
             for param in paramlist.split(","):
                 if param == "pw":
                     hash_contents.append(settings.AUTHENTICATION_SECRET)
                 else:
-                    hash_contents.append(request.GET.get(param,""))
+                    hash_contents.append(request.GET.get(param, ""))
             hash_string = md5(",".join(hash_contents)).hexdigest().upper()
             if hash_string == param_hash and email is not None:
-                request.session['user'] = "mailto:%s" % (email,)
+                request.session['user'] = "mailto:%s" % (email, )
 
         # Fetch user from session
-        user = request.session.get('user',None)
+        user = request.session.get('user', None)
 
         # If no user is specified, show information on how to login
         if user is None:
-            return render(request, 'dashboard/loginfirst.html',{})
+            return render(request, 'dashboard/loginfirst.html', {})
         else:
             return func(request, *args, **kwargs)
     return inner
@@ -77,7 +75,7 @@ def check_group(func):
     """
     def inner(request, *args, **kwargs):
         # Fetch user from session
-        user = request.session.get('user',None)
+        user = request.session.get('user', None)
 
         # Case 1: Existing user
         try:
@@ -93,12 +91,12 @@ def check_group(func):
             if GroupAssignment.objects.count() % 2 == 0:
                 group = random.choice(['A', 'B'])
                 if group == 'A':
-                    ga = GroupAssignment(user=user, group='A')
-                    ga.save()
+                    assignment = GroupAssignment(user=user, group='A')
+                    assignment.save()
                     return func(request, *args, **kwargs)
                 else:
-                    ga = GroupAssignment(user=user, group='B')
-                    ga.save()
+                    assignment = GroupAssignment(user=user, group='B')
+                    assignment.save()
                     return HttpResponse()
             # Case 2b: Second half of new pair,
             #          choose the group that was not previously chosen.
@@ -108,12 +106,12 @@ def check_group(func):
                 except:
                     last_group = random.choice(['A', 'B'])
                 if last_group == 'A':
-                    ga = GroupAssignment(user=user, group='B')
-                    ga.save()
+                    assignment = GroupAssignment(user=user, group='B')
+                    assignment.save()
                     return HttpResponse()
                 else:
-                    ga = GroupAssignment(user=user, group='A')
-                    ga.save()
+                    assignment = GroupAssignment(user=user, group='A')
+                    assignment.save()
                     return func(request, *args, **kwargs)
     return inner
 
@@ -135,7 +133,7 @@ def bootstrap_recommend(request, milestones):
 def barcode(request, default_width=170):
     """Return an svg representing progress of an individual vs the group."""
     # Fetch user from session
-    user = request.session.get('user',None)
+    user = request.session.get('user', None)
 
     width = int(request.GET.get('width', default_width))
     data = {'width': width, 'height': BARCODE_HEIGHT}
@@ -161,7 +159,7 @@ def barcode(request, default_width=170):
         data['user'] /= maximum
         data['user'] *= width
         data['user'] = int(data['user'])
-        for i, person in enumerate(data['people']):
+        for i in range(len(data['people'])):
             data['people'][i] /= maximum
             data['people'][i] *= width
             data['people'][i] = int(data['people'][i])
@@ -177,21 +175,20 @@ def barcode(request, default_width=170):
 @check_group
 def index(request):
     # Fetch user from session
-    user = request.session.get('user',None)
+    user = request.session.get('user', None)
 
-    activities = Activity.objects
-    statements = map(lambda x: x._dict(),
-                     activities.filter(
-                         user=user).order_by('-time'))
+    activities = Activity.objects.filter(user=user).order_by('-time')
+    statements = map(lambda x: x._dict(), activities)
     statements = aggregate_statements(statements)
 
     for statement in statements:
-        statement['activity'] = fix_url(statement['activity'],request)
+        statement['activity'] = fix_url(statement['activity'], request)
 
     statements = split_statements(statements)
 
     assignments = statements['assignments']
     exercises = statements['exercises']
+    exercises.sort(key = lambda x: x['value'])
     video = statements['video']
 
     template = loader.get_template('dashboard/index.html')
@@ -212,64 +209,113 @@ def index(request):
 
 @identity_required
 @check_group
-def get_recommendations(request, milestones, max_recs=False):
+def get_recommendations(request, milestones, max_recommendations=False):
     # Fetch user from session
-    user = request.session.get('user',None)
-
-    rec_objs = Recommendation.objects
-    result = []
+    user = request.session.get('user', None)
 
     # Get maximum recommendations to be showed
-    max_recs = int(request.GET.get('max', max_recs))
+    max_recommendations = int(request.GET.get('max', max_recommendations))
 
-    # TODO: CHECK IS THIS OK?
-    # Create exclude set of completed items
-    #  these should not be recommended.
-    exclude = Activity.objects.filter(
+    # Fetch activities that can be perceived as seen by the user
+    seen = Activity.objects.filter(
         Q(verb=COMPLETED) | Q(verb=PROGRESSED),
-        value__gte=80,
+        value__gte=30,
         user=user
     )
-    exclude = set(map(lambda x: x.activity, exclude))
+    # Futher filter that list to narrow it down to activities that can be
+    # perceived as being done by the user.
+    done = seen.filter(value__gte=80)
 
+    # Preprocess the seen and done sets to be used later
+    seen = set(map(lambda x: hash(x.activity), seen))
+    done = set(map(lambda x: x.activity, done))
+
+    # Init dict containing final recommendations
+    recommendations = {}
+
+    # For every milestone we want to make recommendations for:
     for milestone in milestones.split(','):
-        if milestone not in exclude:
-            recommendations = rec_objs.filter(milestone=milestone)
-            for rec in recommendations:
-                if rec.url not in exclude:
-                    score = f_score(rec.confidence, rec.support, beta=1.5)
-                    result.append({'milestone': milestone,
-                                 'url': rec.url,
-                                 'id': rand_id(),
-                                 'name': rec.name,
-                                 'desc': rec.description,
-                                 'm_name': rec.m_name,
-                                 'confidence': rec.confidence,
-                                 'support': rec.support,
-                                 'score': score})
+        # Make sure the milestone is not already passed
+        if milestone not in done:
+            # Fetch list of rules from the context of this milestone.
+            # Rules contain antecedent => consequent associations with a
+            # certain amount of confidence and support. The antecedent is
+            # stored as a hash of the activities in the antecedent. The
+            # consequent is the activity that is recommended if you did the
+            # activities in the consequent. At the moment only the trail
+            # recommendation algorithm is used, which has antecedents of only
+            # one activity. If this was different, the antecedent hash check
+            # would have to include creating powersets of certain length.
+            rules = Recommendation.objects.filter(milestone=milestone)
+            # For each recommendation rule
+            for rule in rules:
+                # If the LHS applies and the RHS is not already done
+                if rule.antecedent_hash in seen and \
+                        rule.consequent not in done:
+                    # If the consequent was already recommended earlier
+                    if rule.consequent in recommendations:
+                        # Fetch earlier recommendation
+                        earlier_rule = recommendations[rule.consequent]
+                        # Calculate the original total by with the support was
+                        # divided in order to get the confidence of the
+                        # the earlier recommendation
+                        earlier_total = earlier_rule['support']
+                        earlier_total /= float(earlier_rule['confidence'])
+                        total = earlier_total + rule.support/rule.confidence
+                        # Calculate combined values
+                        support = earlier_rule['support'] + rule.support
+                        confidence = support / float(total)
+                        score = f_score(confidence, support, beta=1.5)
+                        # Update the earlier recommendation to combine both
+                        earlier_rule['support'] = support
+                        earlier_rule['confidence'] = confidence
+                        earlier_rule['score'] = score
+                    # If the consequent is recommended for the first time
+                    else:
+                        # Calculate F-score
+                        score = f_score(rule.confidence, rule.support, beta=1.5)
+                        # Store recommendation for this consequent
+                        recommendations[rule.consequent] = {
+                            'milestone': milestone,
+                            'url': rule.consequent,
+                            'id': rand_id(),
+                            'name': rule.name,
+                            'desc': rule.description,
+                            'm_name': rule.m_name,
+                            'confidence': rule.confidence,
+                            'support': rule.support,
+                            'score': score
+                        }
+    # Convert to a list of recommendations.
+    # The lookup per consequent is no longer necessary
+    recommendations = recommendations.values()
 
-    # Normalise support
-    if len(result) > 0:
-        max_sup = max(map(lambda x: x['score'], result))
-        for rec in result:
-            rec['score'] /= max_sup
+    # If recommendations were found
+    if len(recommendations) > 0:
+        # Normalise score
+        max_score = max(map(lambda x: x['score'], recommendations))
+        for recommendation in recommendations:
+            recommendation['score'] /= max_score
 
-        result.sort(key=lambda x: x['score'], reverse=True)
+        # Sort the recommendations using their f-scores
+        recommendations.sort(key = lambda x: x['score'], reverse=True)
 
-        if max_recs:
-            result = result[:max_recs]
+        # Cap the number of recommendations if applicable.
+        if max_recommendations:
+            recommendations = recommendations[:max_recommendations]
 
         # Log Recommendations viewed
         data = json.dumps({
-                "recs": map(lambda x: x['url'],result),
+                "recs": map(lambda x: x['url'], recommendations),
                 "path": request.path,
                 "milestone_n": len(milestones.split(',')),
                 "milestones": milestones})
         event = LogEvent(type='V', user=user, data=data)
         event.save()
 
+        # Render the result
         return render(request, 'dashboard/recommend.html',
-                  {'recommendations': result,
+                  {'recommendations': recommendations,
                    'context': event.id,
                    'host': request.get_host()})
     else:
@@ -282,7 +328,7 @@ def cache_activities(request):
     """
     # Dynamic interval retrieval settings
     INTERVAL = timedelta(days=1)
-    EPOCH = datetime(2013,9,3,0,0,0,0,pytz.utc)
+    EPOCH = datetime(2013, 9, 3, 0, 0, 0, 0, pytz.utc)
 
     # Set aggregate to True if events concerning the same activity-person
     # should be aggregated into one row. This has impact for recommendations.
@@ -296,9 +342,9 @@ def cache_activities(request):
 
     # Get new data
     tincan = TinCan(USERNAME, PASSWORD, ENDPOINT)
-    statements = tincan.dynamicIntervalStatementRetrieval(t1,INTERVAL)
+    statements = tincan.dynamicIntervalStatementRetrieval(t1, INTERVAL)
     for statement in statements:
-        type = statement['object']['definition']['type']
+        statement_type = statement['object']['definition']['type']
         user = statement['actor']['mbox']
         activity = statement['object']['id']
         verb = statement['verb']['id']
@@ -306,15 +352,21 @@ def cache_activities(request):
         description = statement['object']['definition']['description']['en-US']
         time = dateutil.parser.parse(statement['timestamp'])
         try:
-            raw = statement['result']['score']['raw']
-            min = statement['result']['score']['min']
-            max = statement['result']['score']['max']
-            value = 100 * (raw - min) / max
+            raw_score = statement['result']['score']['raw']
+            min_score = statement['result']['score']['min']
+            max_score = statement['result']['score']['max']
+            value = 100 * (raw_score - min_score) / max_score
         except KeyError:
             try:
                 value = 100 * float(statement['result']['extensions'][PROGRESS_T])
             except KeyError:
-                value = 0
+                # If no information is given about the end result then assume a
+                # perfect score was acquired when the activity was completed,
+                # and no score otherwise.
+                if verb == COMPLETED:
+                    value = 100
+                else:
+                    value = 0
         if aggregate:
             a, created = Activity.objects.get_or_create(user=user,
                                                         activity=activity)
@@ -323,7 +375,7 @@ def cache_activities(request):
             if created or (time > a.time and
                            (verb == COMPLETED or a.verb != COMPLETED)):
                 a.verb = verb
-                a.type = type
+                a.type = statement_type
                 a.value = value
                 a.name = name
                 a.description = description
@@ -336,7 +388,7 @@ def cache_activities(request):
                                                         time=time)
             if created:
                 a.verb = verb
-                a.type = type
+                a.type = statement_type
                 a.value = value
                 a.name = name
                 a.description = description
@@ -350,21 +402,25 @@ def generate_recommendations(request):
     gamma = int(request.GET.get('gamma', .8))
 
     # Mine recommendations
-    recommendations, names = recommend(minsup=2, minconf=.3, gamma=.8)
+    recommendations, names = recommend(
+            minsup=minsup,
+            minconf=minconf,
+            gamma=gamma
+    )
 
     # Add recommendations to database
     Recommendation.objects.all().delete()
-    for r in recommendations:
-        item_hash = hash(r['antecedent'])
-        rec = Recommendation(item_hash=item_hash,
-                             confidence=r['confidence'],
-                             support=r['support'],
-                             milestone=r['milestone'],
-                             m_name=names[r['milestone']][0],
-                             name=names[r['consequent']][0],
-                             url=r['consequent'],
-                             description=names[r['consequent']][1])
-        rec.save()
+    for recommendation in recommendations:
+        model = Recommendation(
+            antecedent_hash = hash(recommendation['antecedent']),
+            confidence = recommendation['confidence'],
+            support = recommendation['support'],
+            milestone = recommendation['milestone'],
+            m_name = names[recommendation['milestone']][0],
+            name = names[recommendation['consequent']][0],
+            consequent = recommendation['consequent'],
+            description = names[recommendation['consequent']][1])
+        model.save()
 
     event = LogEvent(type='G', user='all', data=json.dumps(recommendations))
     event.save()
@@ -376,7 +432,7 @@ def track(request, defaulttarget='index.html'):
     relevance in the future.
     """
     # Fetch user from session
-    user = request.session.get('user',None)
+    user = request.session.get('user', None)
 
     # Fetch target URL from GET parameters
     target = request.GET.get('target', defaulttarget)

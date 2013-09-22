@@ -55,11 +55,11 @@ def recommend(recommendationfunction='trail', inputverbs=None, **kwargs):
     freq = dict()
     name_description = dict()
 
-    activities = Activity.objects.all()
+    activities = Activity.objects.order_by("-time")
     for activity in activities:
         if activity.verb not in verbs:
             continue
-        actor = activity.user     # TODO replace mbox by ID
+        actor = activity.user
         name_description[activity.activity] = \
                 (activity.name,
                  activity.description)
@@ -93,7 +93,6 @@ def recommend(recommendationfunction='trail', inputverbs=None, **kwargs):
         rules = []
         print 'Generating rules for assessment ', assessment_id
         if recommendationfunction == 'apriori':
-            # TODO choose between apriori / TID / (hybrid)
             minsup = kwargs['minsup']
             minconf = kwargs['minconf']
 
@@ -118,6 +117,6 @@ def recommend(recommendationfunction='trail', inputverbs=None, **kwargs):
 
     return rulebase, name_description
 
-if __name__=="__main__":
+if __name__ == "__main__":
     recommend('apriori', minsup=float(sys.argv[1]), minconf=float(sys.argv[2]),
             inputverbs=['completed'], max_consequent_size=1, verbose=True)
