@@ -50,7 +50,8 @@ class Activity(models.Model):
 class LogEvent(models.Model):
     TYPES = (('G', 'Generated recommendations'),
              ('V', 'Viewed recommendations'),
-             ('C', 'Clicked on recommendation'),
+             ('C', 'Update cache'),
+             ('T', 'Track a click'),
              ('D', 'Viewed dashboard'))
     type = models.CharField(max_length=1, choices=TYPES)
     user = models.EmailField()

@@ -363,6 +363,7 @@ def cache_activities(request):
     # Get new data
     tincan = TinCan(USERNAME, PASSWORD, ENDPOINT)
     statements = tincan.dynamicIntervalStatementRetrieval(t1, INTERVAL)
+    created_statement_count = 0
     for statement in statements:
         statement_type = statement['object']['definition']['type']
         user = statement['actor']['mbox']
@@ -401,6 +402,7 @@ def cache_activities(request):
                 a.description = description
                 a.time = time
                 a.save()
+                created_statement_count += 1
         else:
             a, created = Activity.objects.get_or_create(user=user,
                                                         verb=verb,
@@ -414,6 +416,10 @@ def cache_activities(request):
                 a.description = description
                 a.time = time
                 a.save()
+                created_statement_count += 1
+    data = json.dumps({'t1':t1.isoformat(), 'created':created_statement_count});
+    event = LogEvent(type='C', user='all', data=data)
+    event.save()
     return HttpResponse()
 
 def generate_recommendations(request):
@@ -466,7 +472,7 @@ def track(request, defaulttarget='index.html'):
         except LogEvent.DoesNotExist:
             context = None
 
-    event = LogEvent(type='C', user=user, data=target, context=context)
+    event = LogEvent(type='T', user=user, data=target, context=context)
     event.save()
 
     return redirect(fix_url(target, request))
