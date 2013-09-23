@@ -1,4 +1,5 @@
 import random
+import re
 import json
 import pytz
 import dateutil.parser
@@ -251,6 +252,8 @@ def get_recommendations(request, milestones, max_recommendations=False):
 
     # For every milestone we want to make recommendations for:
     for milestone in milestones.split(','):
+        # Alas this is necessary on some servers
+        milestone = re.sub(r'http(s?):/([^/])',r'http\1://\2',milestone)
         # Make sure the milestone is not already passed
         if milestone not in done:
             # Fetch list of rules from the context of this milestone.
