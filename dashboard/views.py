@@ -117,14 +117,23 @@ def check_group(func):
 
 ## Bootstrap
 def bootstrap(request):
-    return render(request, 'dashboard/bootstrap.html',
-                  {'host': request.get_host()})
+    width = request.GET.get('width',0)
+    template = loader.get_template('dashboard/bootstrap.js')
+    return HttpResponse(
+        template.render(RequestContext(
+            request,
+            { 'host': request.get_host(), 'width': width }
+        )),
+        content_type="application/javascript"
+    )
 
 def bootstrap_recommend(request, milestones):
+    width = request.GET.get('width',0)
     max_recs = int(request.GET.get('max', False))
-    return render(request, 'dashboard/bootstrap_recommend.html',
+    return render(request, 'dashboard/bootstrap_recommend.js',
                   {'milestones': milestones,
                    'max_recs': max_recs,
+                   'width': width,
                    'host': request.get_host()})
 
 ## Interface
@@ -216,6 +225,9 @@ def index(request):
 def get_recommendations(request, milestones, max_recommendations=False):
     # Fetch user from session
     user = request.session.get('user', None)
+
+    # Fetch desired width of the recommendations dashboard
+    width = request.GET.get("width", 300);
 
     # Get maximum recommendations to be showed
     max_recommendations = int(request.GET.get('max', max_recommendations))
@@ -321,6 +333,7 @@ def get_recommendations(request, milestones, max_recommendations=False):
         return render(request, 'dashboard/recommend.html',
                   {'recommendations': recommendations,
                    'context': event.id,
+                   'width' : width,
                    'host': request.get_host()})
     else:
         return HttpResponse()
