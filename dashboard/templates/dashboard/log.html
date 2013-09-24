@@ -18,7 +18,14 @@
 	<table class="table table-condensed table-hover">
 		<thead>
 		<tr>
-			<th>Id</th><th>Type</th><th>User</th><th>Data</th><th>Context</th><th>Timestamp</th>
+			<th>Id</th>
+			<th>Type</th>
+			<th>User</th>
+			{% if data %}
+			<th>Data</th>
+			{% endif %}
+			<th>Context</th>
+			<th>Timestamp</th>
 		</tr>
 		</thead>
 		<tbody>
@@ -27,7 +34,9 @@
 			<td>{{ l.id }}</td>
 			<td>{{ l.type }}</td>
 			<td>{{ l.user }}</td>
+			{% if data %}
 			<td>{{ l.data }}</td>
+			{% endif %}
 			<td>{{ l.context }}</td>
 			<td>{{ l.timestamp }}</td>
 		<tr>

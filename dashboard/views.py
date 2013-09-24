@@ -140,8 +140,9 @@ def bootstrap_recommend(request, milestones):
 ## Debug interface
 def log(request):
    logs = LogEvent.objects.order_by('-timestamp')[:100]
+   data = request.GET.get('data',"0") == "1"
    return render(request, 'dashboard/log.html',
-           { 'logs': logs, 'host': request.get_host()})
+           { 'logs': logs, 'data': data, 'host': request.get_host()})
 
 
 ## Interface
