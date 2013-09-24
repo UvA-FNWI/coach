@@ -137,6 +137,13 @@ def bootstrap_recommend(request, milestones):
                    'width': width,
                    'host': request.get_host()})
 
+## Debug interface
+def log(request):
+   logs = LogEvent.objects.order_by('-timestamp')[:100]
+   return render(request, 'dashboard/log.html',
+           { 'logs': logs, 'host': request.get_host()})
+
+
 ## Interface
 @identity_required
 @check_group

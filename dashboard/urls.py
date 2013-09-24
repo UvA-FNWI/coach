@@ -23,5 +23,7 @@ urlpatterns = patterns('',
             views.get_recommendations,
             name='get recommendations'),
 
+        url(r'^log$', views.log, name='log'),
+
         url(r'^track$', views.track, name='track'),
         )
