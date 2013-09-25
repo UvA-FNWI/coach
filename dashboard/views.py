@@ -54,7 +54,7 @@ def identity_required(func):
                 else:
                     hash_contents.append(request.GET.get(param, ""))
             hash_string = md5(",".join(hash_contents)).hexdigest().upper()
-            if hash_string == param_hash and email is not None:
+            if hash_string == param_hash and email is not None and email != "":
                 request.session['user'] = "mailto:%s" % (email, )
 
         # Fetch user from session
@@ -364,7 +364,14 @@ def cache_activities(request):
 
     # Find most recent date
     try:
-        t1 = Activity.objects.latest('time').time
+        # Selecting the the datetime of the latest stored item minus a margin
+        # of 6 hours. The margin is there to be slightly more resillient to
+        # variation (read mistakes) in timezone handling and also to cope with
+        # the situation that an event was stored later than it occured. The
+        # latter situation is one of the use cases of the Experience API.
+        # TODO: The 6 hour margin is arbitrary and a hack.
+        # We should find a better solution for this.
+        t1 = Activity.objects.latest('time').time - timedelta(hours=6)
     except:
         t1 = EPOCH
 
