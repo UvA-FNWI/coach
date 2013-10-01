@@ -198,7 +198,7 @@ def index(request):
     # Fetch desired width of the dashboard
     width = request.GET.get("width",300);
 
-    activities = Activity.objects.filter(user=user).order_by('-time')
+    activities = Activity.objects.filter(user=user).order_by('time')
     statements = map(lambda x: x._dict(), activities)
     statements = aggregate_statements(statements)
 
@@ -208,9 +208,11 @@ def index(request):
     statements = split_statements(statements)
 
     assignments = statements['assignments']
+    assignments.sort(key = lambda x: x['time'], reverse=True)
     exercises = statements['exercises']
     exercises.sort(key = lambda x: x['value'])
     video = statements['video']
+    video.sort(key = lambda x: x['time'], reverse=True)
 
     template = loader.get_template('dashboard/index.html')
     context = RequestContext(request, {

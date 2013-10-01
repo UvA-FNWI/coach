@@ -45,13 +45,7 @@
 					<tr class="">
 					{% endif %}
 						<td>
-							<a data-toggle="tooltip"
-								 data-animation="false"
-								 data-original-title="{{ s.desc }}"
-								 id="{{ s.id }}"
-								 href="{{ s.activity }}"
-                 style="width:{{ width|add:"-50" }}px; display:block; float:left;"
-								 target="_blank" >{{ s.name }}</a>
+								 {{ s.name }}
 							{% if not s.value == None %}
 							<small class="pull-right text-muted">{{ s.value|floatformat }}%</small>
 							{% endif %}
