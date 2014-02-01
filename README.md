@@ -1,7 +1,7 @@
 coach
 =====
 
-Dashboard for the COACH project
+Dashboard for the COACH project. The software is by no means guarenteed to be production ready.
 
 Installation
 ============
