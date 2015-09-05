@@ -17,7 +17,6 @@ from .helpers import get_barcode_data
 
 BARCODE_HEIGHT = 35
 ASSESSMENT = XAPIConnector.ACTIVITY_TYPES['assessment']
-ASSESSMENT = XAPIConnector.ACTIVITY_TYPES['question']
 
 ## Decorators
 def identity_required(func):
