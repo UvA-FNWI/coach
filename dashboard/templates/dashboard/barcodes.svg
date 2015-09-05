@@ -5,17 +5,21 @@
       xmlns="http://www.w3.org/2000/svg"
       viewBox="0 0 {{ width }} {{height}}" version="1.1">
 
+    {% if course_barcode.show %}
     <text x="0" y="15" font-family="Arial" font-size="16" fill="black" font-weight="bold">
         CURSUS:
     </text>
     <g transform="translate(0, 25)">
     {% include "dashboard/barcode.svg" with d=course_barcode only %}
     </g>
+    {% endif %}
 
+    {% if current_barcode.show %}
     <text x="0" y="{{ course_barcode.height|add:"50"}}" font-family="Arial" font-size="16" fill="black" font-weight="bold">
         WEEK:
     </text>
     <g transform="translate(0, {{ course_barcode.height|add:"60"}})">
     {% include "dashboard/barcode.svg" with d=current_barcode only %}
     </g>
+    {% endif %}
 </svg>

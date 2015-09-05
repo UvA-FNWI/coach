@@ -1,5 +1,8 @@
 def get_barcode_data(width, height, activities, assessments, user):
-    data = {'height': height}
+    if len(assessments) == 0:
+        return {'show': False}
+
+    data = {'show': True, 'height': height}
     markers = {}
     for activity in activities:
         if activity.activity not in assessments:
