@@ -1,0 +1,21 @@
+<?xml version="1.0" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+  "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg style="" width="100%" height="{{height}}px" id="progress"
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 {{ width }} {{height}}" version="1.1">
+
+    <text x="0" y="15" font-family="Arial" font-size="16" fill="black" font-weight="bold">
+        CURSUS:
+    </text>
+    <g transform="translate(0, 25)">
+    {% include "dashboard/barcode.svg" with d=course_barcode only %}
+    </g>
+
+    <text x="0" y="{{ course_barcode.height|add:"50"}}" font-family="Arial" font-size="16" fill="black" font-weight="bold">
+        WEEK:
+    </text>
+    <g transform="translate(0, {{ course_barcode.height|add:"60"}})">
+    {% include "dashboard/barcode.svg" with d=current_barcode only %}
+    </g>
+</svg>

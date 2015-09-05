@@ -1,8 +1,8 @@
 from django.contrib import admin
-from models import Recommendation, Activity, LogEvent, GroupAssignment
+from .models import *
 
+class ActivityAdmin(admin.ModelAdmin):
+    list_display = ('user','verb', 'activity', 'type', 'course')
 
-admin.site.register(Recommendation)
-admin.site.register(Activity)
-admin.site.register(LogEvent)
+admin.site.register(Activity, ActivityAdmin)
 admin.site.register(GroupAssignment)

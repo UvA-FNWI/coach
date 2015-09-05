@@ -4,11 +4,12 @@ Contains lists of verbs and definition of activities specifically
 for the COACH project.
 
 Auth: Sander Latour, Auke Wiggers
-Date: 29-07-2013
+Date: 04-09-2015, 29-07-2013
 '''
 
 from requests.auth import HTTPBasicAuth
 from urlparse import urljoin
+from django.conf import settings
 import requests
 import json
 import urllib
@@ -17,7 +18,7 @@ import pytz
 from datetime import datetime, timedelta
 
 
-class TinCan(object):
+class XAPIConnector(object):
     VERSIONHEADER = "X-Experience-API-Version"
     VERSION = "1.0.0"
     VERBS = {'launched': {'id': 'http://adlnet.gov/expapi/verbs/launched',
@@ -38,14 +39,14 @@ class TinCan(object):
              'question': 'http://adlnet.gov/expapi/activities/question'
                                      }
 
-    def __init__(self, userName, secret, endpoint, logger=None):
-        self._userName = userName
-        self._secret = secret
-        self._endpoint = endpoint
+    def __init__(self, userName=None, secret=None, endpoint=None, logger=None):
+        self._userName = userName or settings.LRS.get('username','')
+        self._secret = secret or settings.LRS.get('password','')
+        self._endpoint = endpoint or settings.LRS.get('endpoint','')
         self.logger = logger
 
     def submitStatement(self, jsonObject):
-        ##Attempts to submit a single statement
+        """Submit a single statement."""
         try:
             ##Validates that the verb is valid
             #if(not dataValidation.validateVerb(jsonObject['verb'])):
@@ -63,7 +64,7 @@ class TinCan(object):
 
 
     def submitStatementList(self, jsonObjectList):
-        ##Submits a list of Statements
+        """Submits a list of Statements."""
         for statement in jsonObjectList:
             try:
                 ##Validates that the verb is valid
@@ -83,7 +84,7 @@ class TinCan(object):
 
 
     def getStatementByID(self, ID):
-        ##Attempts to retrieve a statement by its ID
+        """Retrieve a statement by its ID."""
         try:
             url = self._endpoint+"?statementId="+ID
             resp = requests.get(url,
@@ -139,7 +140,7 @@ class TinCan(object):
                 t1 += dt
 
     def getAllStatements(self):
-        ##Attempts to retrieve every TinCan Statement from the End point
+        """Retrieve every TinCan Statement from the End point."""
         try:
             endpoint = self._endpoint
             statements = []
@@ -165,48 +166,51 @@ class TinCan(object):
             if self.logger is not None:
                 self.logger.error(e)
 
-    def getFilteredStatements(self, inputDict, fail_safe):
-        ##Attempts to retrieve every TinCan Statement from the End point
+    def getFilteredStatements(self, filters, fail_safe=None):
+        """Retrieve every TinCan Statement that matches filters."""
         fail_safe = True if fail_safe is None else fail_safe
-        queryObject = {}
-        for key in ['result', 'agent', 'context', 'timestamp',
-                                'verb', 'object', 'since','until','limit',
-                                'stored', 'authority', 'version', 'attachments']:
-            if key in inputDict:
-                queryObject[key] = inputDict[key]
 
-        endpoint = self._endpoint
+        resource = self._endpoint+"?"+urllib.urlencode(filters)
+        more = False
         try:
             statements = []
-            while endpoint is not None:
+            while resource is not None:
                 try:
-                    if (len(endpoint)> 2048):
-                        resp = requests.post(endpoint,
-                                             data = queryObject,
-                                             auth = HTTPBasicAuth(self._userName,self._secret),
-                                             headers = {"Content-Type":"application/json",
-                                                                 self.VERSIONHEADER:self.VERSION})
-                    else:
-                        resp = requests.get(endpoint +"?"+urllib.urlencode(queryObject),
-                                            auth = HTTPBasicAuth(self._userName,self._secret),
-                                            headers = {"Content-Type":"application/json",
-                                                             self.VERSIONHEADER:self.VERSION})
+                    resp = requests.get(resource,
+                            auth = HTTPBasicAuth(self._userName, self._secret),
+                            headers = {
+                                "Content-Type": "application/json",
+                                self.VERSIONHEADER: self.VERSION})
+
                 except requests.ConnectionError as e:
                     if self.logger is not None:
                         print "Error getting statements."
                         self.logger.error(e)
                     return statements if fail_safe else False
+
                 try:
                     result = resp.json()
                     statements = statements + result["statements"]
                     if "more" in result and result["more"]:
-                        endpoint = urljoin(endpoint, result["more"])
+                        more = True
+                        resource = urljoin(self._endpoint, result["more"])
                     else:
-                        endpoint = None
+                        resource = None
                 except Exception as e:
-                    print "Error decoding response:", result
+                    print "Error decoding response:", resp
                     return False
             return statements
         except IOError as e:
             if self.logger is not None:
                 self.logger.error(e)
+
+    def getAllStatementsByRelatedActitity(self, related_activity, epoch=None):
+        filters = {
+                'related_activities': 'True',
+                'activity': related_activity}
+        if epoch is not None:
+            if epoch.tzinfo is None:
+                epoch = epoch.replace(tzinfo=pytz.utc)
+            filters['since'] = epoch.isoformat()
+
+        return self.getFilteredStatements(filters)

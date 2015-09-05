@@ -1,68 +1,47 @@
-import re
-import random
-import string
-
-from tincan_api import TinCan
-
-# To ensure iktel login
-IKTEL_URL_FORMAT = "http://www.iktel.nl/postlogin?continue=%s&login_hint=%s"
-
-def fix_url(url, request):#{{{
-    """Make sure the iktel lings go through the appengine login first."""
-    if re.search('www.iktel.nl', url):
-        return IKTEL_URL_FORMAT % (url, request.GET.get('email'));
-    return url#}}}
-
-def aggregate_statements(statements):#{{{
-    table = {}
-    for stmt in statements:
-        if stmt['user'] in table:
-            if stmt['activity'] in table[stmt['user']]:
-                competitor = table[stmt['user']][stmt['activity']]
-                if competitor['time'] < stmt['time']:
-                    if competitor['verb'] == TinCan.VERBS['completed']['id']:
-                        if stmt['verb'] == TinCan.VERBS['completed']['id']:
-                            table[stmt['user']][stmt['activity']] = stmt
-                    else:
-                        table[stmt['user']][stmt['activity']] = stmt
-            else:
-                table[stmt['user']][stmt['activity']] = stmt
-        else:
-            table[stmt['user']] = {stmt['activity'] : stmt}
-    aggregated_statements = []
-    for user in table:
-        for activity in table[user]:
-            aggregated_statements.append(table[user][activity])
-    return aggregated_statements#}}}
-
-def split_statements(statements):#{{{
-    """Split statements by type:
-        assignments
-        exercises
-        video
-        rest
-    """
-    result = {'assignments' : [], 'exercises' : [], 'video' : [], 'rest' : []}
-    for statement in statements:
-        try:
-            type = statement['type']
-        except KeyError:
+def get_barcode_data(width, height, activities, assessments, user):
+    data = {'height': height}
+    markers = {}
+    for activity in activities:
+        if activity.activity not in assessments:
             continue
-        if type == TinCan.ACTIVITY_TYPES['assessment']:
-            result['assignments'].append(statement)
-        elif type == TinCan.ACTIVITY_TYPES['question']:
-            result['exercises'].append(statement)
-        elif type == TinCan.ACTIVITY_TYPES['media']:
-            result['video'].append(statement)
+        if activity.user in markers:
+            markers[activity.user][activity.activity] = max(activity.value,
+                    markers[activity.user].get(activity.activity, 0))
         else:
-            result['rest'].append(statement)
-    return result#}}}
+            markers[activity.user] = {activity.activity: activity.value}
 
-def f_score(confidence, support, beta=1):#{{{
-    return (1 + beta ** 2) * ((confidence * support) /
-                              (beta ** 2 * confidence + support))#}}}
 
-def rand_id():#{{{
-    """Generate a random ID for use in html DOM elements."""
-    return ''.join(random.choice(string.ascii_uppercase + string.digits)
-                   for x in range(10))#}}}
+    for marker in markers:
+        markers[marker] = sum(markers[marker].values())
+
+    if user in markers:
+        data['user'] = markers[user]
+        del markers[user]
+    else:
+        data['user'] = 0
+    data['people'] = markers.values()
+
+    # Normalise
+    maximum = len(assessments)*100
+    data['user'] /= float(maximum)
+    data['user'] *= width
+    data['user'] = int(data['user'])
+    for i in range(len(data['people'])):
+        data['people'][i] /= maximum
+        data['people'][i] *= width
+        data['people'][i] = int(data['people'][i])
+    return data
+
+def generate_barcode_url(user, course):
+    from hashlib import md5
+    from django.conf import settings
+    from time import time
+    from urllib import quote, urlencode
+    from django.core.urlresolvers import reverse
+    timestamp = str(int(time()))
+    hash_contents = (user, quote(course,''),
+            timestamp, settings.AUTHENTICATION_SECRET)
+    hash_string = md5(",".join(hash_contents)).hexdigest().upper()
+    querydict = {'paramlist':"user,course,time,pw", 'hash':hash_string,
+            'user':user, 'course': course, 'time': timestamp}
+    return reverse('barcode')+"?"+urlencode(querydict)

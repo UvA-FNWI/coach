@@ -1,6 +1,6 @@
-venv
-db.sqlite
-coach/settings.py
+env
+db.sqlite3
+settings.py
 
 *.py[cod]
 

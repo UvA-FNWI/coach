@@ -1,23 +1,15 @@
-<html style="padding: 0; margin: 0">
-	<body style="padding: 0; margin: 0" >
-		<svg style="" width="100%" height="{{height}}px" id="progress"
-			xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 {{ width }} {{height}}" version="1.1">
-		{% for p in people %}
-			<line x1="{{ p }}" y1="5" x2="{{ p }}" y2="{{height|add:"-5"}}"
-				style="stroke:rgb(0,0,0);stroke-width:1.000000;stroke-opacity:0.100000" />
-		{% endfor%}
-    <polygon points="
-      {{user|add:"-4"}},0 {{user|add:"4"}},0
-      {{user|add:"1"}},4 {{user|add:"-1"}},4" 
-				style="fill:#000000;stroke:#000000;stroke-width:1" />
-			<line x1="{{ user }}" y1="4" x2="{{ user }}" y2="{{height|add:"-4"}}"
-				style="stroke:#000000;stroke-width:3;" />
-      <polygon points="
-        {{user|add:"-4"}},{{height}} {{user|add:"4"}},{{height}}
-        {{user|add:"1"}},{{height|add:"-4"}} {{user|add:"-1"}},{{height|add:"-4"}}"
-				style="fill:#000000;stroke:#000000;stroke-width:1" />
-</svg>
-</body>
-</html>
-{# vim: set ft=htmldjango ts=2 sw=2 softtabstop=2: #}
+<rect x="0" y="3" width="100%" height="{{d.height|add:"-6"}}" stroke-width="1" stroke="#eeeeee" fill="#eeeeee" />
+{% for p in d.people %}
+  <line x1="{{ p }}" y1="5" x2="{{ p }}" y2="{{d.height|add:"-5"}}"
+    style="stroke:rgb(0,0,0);stroke-width:1.000000;stroke-opacity:0.100000" />
+{% endfor%}
+<polygon points="
+  {{d.user|add:"-4"}},0 {{d.user|add:"4"}},0
+  {{d.user|add:"1"}},4 {{d.user|add:"-1"}},4" 
+    style="fill:#000000;stroke:#000000;stroke-width:1" />
+<line x1="{{ d.user }}" y1="4" x2="{{ d.user }}" y2="{{d.height|add:"-4"}}"
+  style="stroke:#000000;stroke-width:3;" />
+<polygon points="
+  {{d.user|add:"-4"}},{{d.height}} {{d.user|add:"4"}},{{d.height}}
+  {{d.user|add:"1"}},{{d.height|add:"-4"}} {{d.user|add:"-1"}},{{d.height|add:"-4"}}"
+  style="fill:#000000;stroke:#000000;stroke-width:1" />

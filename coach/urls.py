@@ -1,19 +1,10 @@
 from django.conf.urls import patterns, include, url
-from dashboard import views
 
-# Uncomment the next two lines to enable the admin:
 from django.contrib import admin
 admin.autodiscover()
 
 urlpatterns = patterns('',
-    url(r'^', include('dashboard.urls')),
-    # Examples:
-    # url(r'^$', 'coach.views.home', name='home'),
-    # url(r'^coach/', include('coach.foo.urls')),
-
-    # Uncomment the admin/doc line below to enable admin documentation:
-    # url(r'^admin/doc/', include('django.contrib.admindocs.urls')),
-
-    # Uncomment the next line to enable the admin:
+    url(r'^cache/?$', 'dashboard.views.cache_activities', name='cache'),
+    url(r'^barcode/?$', 'dashboard.views.barcode', name='barcode'),
     url(r'^admin/', include(admin.site.urls)),
 )
