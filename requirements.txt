@@ -1,0 +1,12 @@
+Django==1.8.4
+django-crispy-forms==1.4.0
+django-durationfield==0.5.1
+django-toolkit==0.3.3
+lxml==3.4.4
+python-dateutil==2.4.2
+pytz==2015.4
+q==2.6
+requests==2.7.0
+six==1.9.0
+tldextract==1.6
+unicodecsv==0.13.0
