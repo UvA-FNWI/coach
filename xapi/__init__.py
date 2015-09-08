@@ -17,7 +17,6 @@ import uuid
 import pytz
 from datetime import datetime, timedelta
 
-
 class XAPIConnector(object):
     VERSIONHEADER = "X-Experience-API-Version"
     VERSION = "1.0.0"
@@ -216,3 +215,6 @@ class XAPIConnector(object):
             filters['since'] = epoch.isoformat()
 
         return self.getFilteredStatements(filters)
+
+PROGRESS_T = "http://uva.nl/coach/progress"
+COMPLETED = XAPIConnector.VERBS['completed']['id']

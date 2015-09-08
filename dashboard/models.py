@@ -1,5 +1,6 @@
 from django.db import models
 from django.conf import settings
+from xapi import PROGRESS_T, COMPLETED
 
 import dateutil
 
@@ -57,6 +58,9 @@ class Activity(models.Model):
             course = statement['context']['contextActivities']['grouping'][0]['id']
         else:
             course = None
+
+        if activity is None or verb is None or name is None:
+            return None
 
         activity, created = cls.objects.get_or_create(user=user, verb=verb,
                 course=course, activity=activity, time=time, defaults={
