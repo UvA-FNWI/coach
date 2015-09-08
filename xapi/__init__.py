@@ -211,6 +211,8 @@ class XAPIConnector(object):
         if epoch is not None:
             if epoch.tzinfo is None:
                 epoch = epoch.replace(tzinfo=pytz.utc)
+            if not epoch.microsecond == 0:
+                epoch = epoch.microsecond.replace(microsecond=0)
             filters['since'] = epoch.isoformat()
 
         return self.getFilteredStatements(filters)
